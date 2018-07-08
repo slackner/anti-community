@@ -1,0 +1,10 @@
+antimodularity
+components
+gml
+laprop
+maxmodularity
+minmodularity
+modularity
+subgraph
+tests
+*.pyc

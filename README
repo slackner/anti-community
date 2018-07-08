@@ -1,0 +1,119 @@
+Anti-Community Detection
+########################
+
+Installation
+============
+
+As a first step, please make sure that all required dependencies are installed.
+The following commands can be used to install missing packages on Ubuntu or
+Debian operating systems:
+
+$ sudo apt-get install build-essential
+$ sudo apt-get install libgsl-dev
+
+Afterwards, just extract the source code to a directory of your choice and run:
+
+$ make
+
+If everything goes well, the program terminates with exitcode 0. If not, the
+error message should hopefully contain a hint what is going wrong. All
+compiled programs will be located within the src/ and third-party/ directory.
+
+Self-Test
+=========
+
+After the compilation finished, it makes sense to run the included self-tests
+to check that everything works fine. The tests are all located in the src/
+folder, so we first have to switch to the right directory:
+
+$ cd src
+
+To run the self-tests of the library itself, execute:
+
+$ make test
+
+To run tests for the Python bindings, execute:
+
+$ ./pygraph.py
+
+Graph File Format
+=================
+
+Most programs contained in this package require graph data with the following
+input format:
+
+--- snip ---
+NumberOfNodes
+StartNode EndNode [Weight]  \
+StartNode EndNode [Weight]   } Edges
+StartNode EndNode [Weight]  /
+[...]
+--- snip ---
+
+The first line defines the number of nodes, all following lines describe the
+edges (first node index, second node index, optional weight). Lines starting
+with "#" are comments and have to be ignored. An example for a trivial graph
+can be seen in src/data/example-trivial.graph.
+
+Programs
+========
+
+The current version of the package contains the following programs. Each
+program also has a separate help, which can be shown by running
+"PROGRAM --help", e.g., "src/laprop --help".
+
+$ src/gml
+	Convert graph to GML file format.
+
+$ src/laprop
+	Apply label propagation algorithm to the graph specified by the given file.
+
+$ src/maxmodularity
+	Agglomerative hierarchical clustering algorithm for community detection /
+	modularity maximization.
+
+$ src/minmodularity
+	Agglomerative hierarchical clustering algorithm for anti- community
+	detection / modularity minimization.
+
+$ src/antimodularity
+	Agglomerative hierarchical clustering algorithm for anti- community
+	detection / anti-modularity maximization.
+
+$ src/components
+	Return connected components of an undirected graph.
+
+$ src/modularity
+	Compute modularity and anti-modularity for the graph specified by the given
+	file.
+
+$ src/subgraph
+	Extract subgraph specified by the given files.
+
+As an example, the following commandline applies a Modularity minimization
+algorithm to the Adjectives and Nouns dataset.
+
+$ src/minmodularity datasets/adjectives-noun/result.graph
+
+By default, the output is written directly to the terminal. Nevertheless, if
+preferred, it can also be redirected to a file:
+
+$ src/minmodularity datasets/adjectives-noun/result.graph > output.txt
+
+Datasets
+========
+
+The datasets directory contains a collection of various small graphs. The
+graphs already have been converted to the correct format. Each directory
+contains a file called "result.graph".
+
+After changing the implementation of an algorithm, it is sufficient to execute:
+
+$ cd datasets
+$ make clean
+$ make
+
+to run all evaluations again. This might take a few minutes. In each directory,
+a "metrics.txt" file will be created, which contains common measures (such as
+the number of communities, Modularity, Antimodularity, etc.) and can be used to
+compare different algorithms.
