@@ -117,3 +117,28 @@ to run all evaluations again. This might take a few minutes. In each directory,
 a "metrics.txt" file will be created, which contains common measures (such as
 the number of communities, Modularity, Antimodularity, etc.) and can be used to
 compare different algorithms.
+
+References
+==========
+
+ - S. Lackner, A. Spitz, M. Weidemüller, and M. Gertz. 2018. Efficient
+   Anti-community Detection in Complex Networks. Proceedings of the 30th
+   International Conference on Scientific and Statistical Database
+   Management (SSDBM '18), July 9-11, 2018, Bozen-Bolzano, Italy. ACM,
+   NY, USA. https://doi.org/10.1145/3221269.3221289
+
+ - L. Chen, Q. Yu, and B. Chen. 2014. Anti-modularity and anti-community
+   detecting in complex networks. Inf. Sci. 275 (2014), 293–313.
+   https://doi.org/10.1016/j.ins.2014.02.040
+
+ - M. E. J. Newman. 2004. Fast algorithm for detecting community
+   structure in networks. Phys. Rev. E 69, 6 (2004), 5.
+   https://doi.org/10.1103/PhysRevE.69.066133
+
+ - M. E. J. Newman and M. Girvan. 2004. Finding and evaluating community
+   structure in networks. Phys. Rev. E 69, 2 (2004), 15.
+   https://doi.org/10.1103/PhysRevE.69.026113
+
+ - M. E. J. Newman and G. Reinert. 2016. Estimating the number of
+   communities in a network. Phys. Rev. Lett. 117 (2016), 5. Issue 7.
+   https://doi.org/10.1103/PhysRevLett.117.078301

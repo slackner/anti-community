@@ -10,6 +10,21 @@
 #include "graph.h"
 #include "internal.h"
 
+/*
+ * Implementation based on:
+ *
+ * - M. E. J. Newman. 2004. Fast algorithm for detecting community
+ *   structure in networks. Phys. Rev. E 69, 6 (2004), 5.
+ *   https://doi.org/10.1103/PhysRevE.69.066133
+ *
+ * - S. Lackner, A. Spitz, M. Weidemüller, and M. Gertz. 2018. Efficient
+ *   Anti-community Detection in Complex Networks. Proceedings of the 30th
+ *   International Conference on Scientific and Statistical Database
+ *   Management (SSDBM '18), July 9-11, 2018, Bozen-Bolzano, Italy. ACM,
+ *   NY, USA. https://doi.org/10.1145/3221269.3221289
+ *
+ */
+
 struct newman_merge
 {
     uint32_t index0, index1;

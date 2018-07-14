@@ -7,6 +7,15 @@
 
 #include "graph.h"
 
+/*
+ * Implementation based on:
+ *
+ * - L. Chen, Q. Yu, and B. Chen. 2014. Anti-modularity and anti-community
+ *   detecting in complex networks. Inf. Sci. 275 (2014), 293–313.
+ *   https://doi.org/10.1016/j.ins.2014.02.040
+ *
+ */
+
 static int label_compat(struct adjacency *adj, uint32_t *labels, uint32_t new_label)
 {
     struct link *link;

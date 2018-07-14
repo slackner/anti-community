@@ -9,6 +9,19 @@
 #include "graph.h"
 #include "internal.h"
 
+/*
+ * Implementation based on:
+ *
+ * - L. Chen, Q. Yu, and B. Chen. 2014. Anti-modularity and anti-community
+ *   detecting in complex networks. Inf. Sci. 275 (2014), 293–313.
+ *   https://doi.org/10.1016/j.ins.2014.02.040
+ *
+ * - M. E. J. Newman and M. Girvan. 2004. Finding and evaluating community
+ *   structure in networks. Phys. Rev. E 69, 2 (2004), 15.
+ *   https://doi.org/10.1103/PhysRevE.69.026113
+ *
+ */
+
 static double degree_product(double *norm_out, const struct graph *g, const uint32_t *labels)
 {
     double *weights_out, *weights_in;
