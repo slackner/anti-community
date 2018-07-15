@@ -57,6 +57,7 @@ int main(int argc, char *argv[])
     uint32_t flags = 0;
     int unweighted = 0;
     int invert = 0;
+    int ret = 1;
     int i;
 
     for (i = 1; i < argc; i++)
@@ -85,8 +86,7 @@ int main(int argc, char *argv[])
     if (clusters && !(labels = load_labels(clusters, g->num_nodes)))
     {
         fprintf(stderr, "Failed to load '%s'\n", clusters);
-        free_graph(g);
-        return 1;
+        goto error;
     }
 
     if (unweighted)
@@ -111,8 +111,10 @@ int main(int argc, char *argv[])
 
     print_comments(filename);
     print_graph(stdout, g);
+    ret = 0;
 
+error:
     free_graph(g);
     free_labels(labels);
-    return 0;
+    return ret;
 }
