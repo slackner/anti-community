@@ -262,7 +262,6 @@ int resize_graph_inplace(struct graph *g, uint32_t num_nodes);
 void assign_graph(struct graph *g, struct graph *src);
 /* print a graph adjacency list */
 void print_graph(FILE *file, const struct graph *g);
-void print_graph_gml(FILE *file, const struct graph *g);
 /* try to shrink memory usage of a graph */
 void compress_graph_inline(struct graph *g);
 /* deallocate all memory used by a graph */

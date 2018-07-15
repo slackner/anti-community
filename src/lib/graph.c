@@ -361,39 +361,6 @@ void print_graph(FILE *file, const struct graph *g)
     fprintf(file, "\n");
 }
 
-void print_graph_gml(FILE *file, const struct graph *g)
-{
-    struct link *link;
-    uint32_t i;
-
-    fprintf(file, "graph\n");
-    fprintf(file, "[\n");
-
-    if (g->flags & GRAPH_FLAGS_DIRECTED)
-        fprintf(file, "  directed 1\n");
-
-    for (i = 0; i < g->num_nodes; i++)
-    {
-        fprintf(file, "  node\n");
-        fprintf(file, "  [\n");
-        fprintf(file, "    id %u\n", i);
-        fprintf(file, "    label \"%u\"\n", i);
-        fprintf(file, "  ]\n");
-    }
-
-    GRAPH_FOR_EACH_EDGE(g, i, link)
-    {
-        if (!(g->flags & GRAPH_FLAGS_DIRECTED) && link->index < i) continue;
-        fprintf(file, "  edge\n");
-        fprintf(file, "  [\n");
-        fprintf(file, "    source %u\n", i);
-        fprintf(file, "    target %u\n", link->index);
-        fprintf(file, "    value %f\n", link->weight);
-        fprintf(file, "  ]\n");
-    }
-    fprintf(file, "]\n");
-}
-
 void compress_graph_inline(struct graph *g)
 {
     struct adjacency *adj;
