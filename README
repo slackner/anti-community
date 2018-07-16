@@ -19,6 +19,7 @@ If everything goes well, the program terminates with exitcode 0. If not, the
 error message should hopefully contain a hint what is going wrong. All
 compiled programs will be located within the src/ and third-party/ directory.
 
+
 Self-Test
 =========
 
@@ -35,6 +36,7 @@ $ make test
 To run tests for the Python bindings, execute:
 
 $ ./pygraph.py
+
 
 Graph File Format
 =================
@@ -54,6 +56,7 @@ The first line defines the number of nodes, all following lines describe the
 edges (first node index, second node index, optional weight). Lines starting
 with "#" are comments and have to be ignored. An example for a trivial graph
 can be seen in src/data/example-trivial.graph.
+
 
 Programs
 ========
@@ -90,15 +93,6 @@ $ src/modularity
 $ src/subgraph
 	Extract subgraph specified by the given files.
 
-As an example, the following commandline applies a Modularity minimization
-algorithm to the Adjectives and Nouns dataset.
-
-$ src/minmodularity datasets/adjectives-noun/result.graph
-
-By default, the output is written directly to the terminal. Nevertheless, if
-preferred, it can also be redirected to a file:
-
-$ src/minmodularity datasets/adjectives-noun/result.graph > output.txt
 
 Datasets
 ========
@@ -117,6 +111,69 @@ to run all evaluations again. This might take a few minutes. In each directory,
 a "metrics.txt" file will be created, which contains common measures (such as
 the number of communities, Modularity, Antimodularity, etc.) and can be used to
 compare different algorithms.
+
+
+Usage Example
+=============
+
+Community Detection
+-------------------
+
+As an example, the following commandline applies a Modularity minimization
+algorithm to the Adjectives and Nouns dataset.
+
+$ src/minmodularity datasets/adjectives-noun/result.graph
+
+By default, the output (a vector of vertex labels) is written directly to the
+terminal. Nevertheless, if preferred, it can also be redirected to a file:
+
+$ src/minmodularity datasets/adjectives-noun/result.graph > output.txt
+
+Note that some programs might have additional parameters, which are passed
+through to the (anti-)community detection method. Please check "PROGRAM --help"
+to get a list of available options.
+
+Evaluation
+----------
+
+To compute the modularity and anti-modularity measure, as well as some other
+statistical values for a community detection result, just run:
+
+$ ./src/modularity --clusters=datasets/adjectives-noun/minmodularity.txt \
+$                  datasets/adjectives-noun/result.graph
+
+The output will contain one measure per line. To write the result to a file,
+the operator ">" can be used, as in the example above.
+
+Plotting
+--------
+
+To create plots suitable for publication, we recommend the tool Gephi available
+from https://gephi.org/. As a prepartion, use the "gml" program to create a
+file containing all attributes required for plotting, for example:
+
+$ ./src/gml --base=datasets/adjectives-noun/ground-truth.txt \
+$           --algo=datasets/adjectives-noun/minmodularity.txt \
+$           datasets/adjectives-noun/result.graph > import.gml
+
+Note that you can add an arbitrary number of attributes by adding additional
+--NAME=FILENAME arguments to the commandline. When you have selected all
+attributes you need, import the output file (here "import.gml") into Gephi.
+
+To color vertices based on an attribute, select the menu "Partition" in the
+side bar "Appearance" on the left. Choose one of the attributes (e.g., "algo"),
+and then click on "Apply" to confirm your changes.
+
+Arranging the vertices based on attributes requires a bit more effort: Create
+a new filter "Library -> Attributes -> Partition -> base" using the
+side bar "Filters" on the right. Then select one partition at a time, click
+on the "Filter" button in the bottom right corner, and apply a Layout
+method of your choice (e.g., "Fruchterman Reingold"). When this is done,
+use the "Drag" cursor to move the cluster to a location of your choice,
+and proceed with the next partition. Note that you can change the selection
+radius by clicking on "Configure" in the top part of the "Graph" view. (If
+there is an easier way to achieve a similar result, please let me know!)
+
 
 References
 ==========
