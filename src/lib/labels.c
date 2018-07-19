@@ -6,6 +6,7 @@
  */
 
 #define _GNU_SOURCE
+#include <math.h>
 #include "graph.h"
 #include "internal.h"
 
@@ -135,13 +136,45 @@ uint32_t count_labels(const uint32_t *labels, uint32_t num_nodes)
     return count;
 }
 
-int simplify_labels_inplace(uint32_t *labels, uint32_t num_nodes)
+uint32_t *simplify_labels(const uint32_t *labels, uint32_t num_nodes, uint32_t *count_out)
+{
+    uint32_t *output, *lookup;
+    uint32_t i, count = 0;
+
+    if (!(output = xmalloc(sizeof(*output) * num_nodes)))
+        return NULL;
+
+    if (!(lookup = xmalloc(sizeof(*lookup) * num_nodes)))
+    {
+        free(output);
+        return NULL;
+    }
+
+    for (i = 0; i < num_nodes; i++) lookup[i] = i;
+    qsort_r(lookup, num_nodes, sizeof(lookup[0]), _sort_index_by_label, (void *)labels);
+
+    for (i = 0; i < num_nodes;)
+    {
+        uint32_t label = labels[lookup[i]];
+        while (i < num_nodes && labels[lookup[i]] == label)
+            output[lookup[i++]] = count;
+        count++;
+    }
+
+    if (count_out)
+        *count_out = count;
+
+    free(lookup);
+    return output;
+}
+
+uint32_t simplify_labels_inplace(uint32_t *labels, uint32_t num_nodes)
 {
     uint32_t *lookup;
     uint32_t i, count = 0;
 
     if (!(lookup = xmalloc(sizeof(*lookup) * num_nodes)))
-        return 0;
+        return ~0U;
 
     for (i = 0; i < num_nodes; i++) lookup[i] = i;
     qsort_r(lookup, num_nodes, sizeof(lookup[0]), _sort_index_by_label, (void *)labels);
@@ -155,7 +188,7 @@ int simplify_labels_inplace(uint32_t *labels, uint32_t num_nodes)
     }
 
     free(lookup);
-    return 1;
+    return count;
 }
 
 void split_labels(uint32_t *labels1, const uint32_t *labels2, uint32_t num_nodes)
@@ -188,6 +221,160 @@ void split_labels(uint32_t *labels1, const uint32_t *labels2, uint32_t num_nodes
     }
 
     free(lookup);
+}
+
+struct graph *intersection_matrix(const uint32_t *labels1, const uint32_t *labels2, uint32_t num_nodes)
+{
+    uint32_t *labels1_simple, *labels2_simple;
+    uint32_t labels1_count, labels2_count;
+    uint32_t max_labels;
+    struct graph *g;
+    uint32_t i;
+
+    if (!(labels1_simple = simplify_labels(labels1, num_nodes, &labels1_count)))
+        return NULL;
+
+    if (!(labels2_simple = simplify_labels(labels2, num_nodes, &labels2_count)))
+    {
+        free(labels1_simple);
+        return NULL;
+    }
+
+    max_labels = MAX(labels1_count, labels2_count);
+    if ((g = alloc_graph(max_labels, GRAPH_FLAGS_DIRECTED)))
+    {
+        for (i = 0; i < num_nodes; i++)
+            _add_edge(g, labels1_simple[i], labels2_simple[i], 1.0);
+    }
+
+    free(labels1_simple);
+    free(labels2_simple);
+    return g;
+}
+
+/* a: true positive, b: false positive, c: false negative, d: true negative */
+int confusion_matrix(double *a_out, double *b_out, double *c_out, double *d_out,
+                     const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes)
+{
+    double a = 0.0, b = 0.0, c = 0.0;
+    struct link *link;
+    double *weights;
+    struct graph *g;
+    uint32_t i;
+
+    if (!(g = intersection_matrix(labels_true, labels_pred, num_nodes)))
+        return 0;
+
+    GRAPH_FOR_EACH_EDGE(g, i, link)
+        a += link->weight * (link->weight - 1);
+
+    if (!(weights = graph_in_weights(g)))
+    {
+        free_graph(g);
+        return 0;
+    }
+
+    for (i = 0; i < g->num_nodes; i++)
+        b += weights[i] * (weights[i] - 1);
+
+    free(weights);
+    if (!(weights = graph_out_weights(g)))
+    {
+        free_graph(g);
+        return 0;
+    }
+
+    for (i = 0; i < g->num_nodes; i++)
+        c += weights[i] * (weights[i] - 1);
+
+    free(weights);
+
+    b -= a;
+    c -= a;
+
+    if (a_out) *a_out = a / 2.0;
+    if (b_out) *b_out = b / 2.0;
+    if (c_out) *c_out = c / 2.0;
+    if (d_out) *d_out = ((double)num_nodes * (num_nodes - 1) - a - b - c) / 2.0;
+
+    free_graph(g);
+    return 1;
+}
+
+double precision(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes)
+{
+    double a, b, c;
+
+    if (!confusion_matrix(&a, &b, &c, NULL, labels_true, labels_pred, num_nodes)) return NAN;
+    if (b == 0.0 && c == 0.0) return 1.0;
+    if (a == 0.0) return 0.0;  /* FIXME */
+
+    return a / (a + b);
+}
+
+double recall(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes)
+{
+    double a, b, c;
+
+    if (!confusion_matrix(&a, &b, &c, NULL, labels_true, labels_pred, num_nodes)) return NAN;
+    if (b == 0.0 && c == 0.0) return 1.0;
+    if (a == 0.0) return 0.0;  /* FIXME */
+
+    return a / (a + c);
+}
+
+double rand_index(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes)
+{
+    double a, b, c, d;
+
+    if (!confusion_matrix(&a, &b, &c, &d, labels_true, labels_pred, num_nodes)) return NAN;
+    if (b == 0.0 && c == 0.0) return 1.0;
+
+    return (a + d) / (a + b + c + d);
+}
+
+double fowlkes_mallows(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes)
+{
+    double a, b, c;
+
+    if (!confusion_matrix(&a, &b, &c, NULL, labels_true, labels_pred, num_nodes)) return NAN;
+    if (b == 0.0 && c == 0.0) return 1.0;
+    if (a == 0.0) return 0.0;  /* FIXME */
+
+    return a / sqrt((a + b) * (a + c));
+}
+
+double jaccard(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes)
+{
+    double a, b, c;
+
+    if (!confusion_matrix(&a, &b, &c, NULL, labels_true, labels_pred, num_nodes)) return NAN;
+    if (b == 0.0 && c == 0.0) return 1.0;
+
+    return a / (a + b + c);
+}
+
+double f1_measure(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes)
+{
+    double a, b, c;
+
+    if (!confusion_matrix(&a, &b, &c, NULL, labels_true, labels_pred, num_nodes)) return NAN;
+    if (b == 0.0 && c == 0.0) return 1.0;
+
+    return (2.0 * a) / (2.0 * a + b + c);
+}
+
+double adjusted_rand_index(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes)
+{
+    double a, b, c, d;
+    double n2, tmp;
+
+    if (!confusion_matrix(&a, &b, &c, &d, labels_true, labels_pred, num_nodes)) return NAN;
+    if (b == 0.0 && c == 0.0) return 1.0;
+
+    n2  = a + b + c + d;
+    tmp = (a + b) * (a + c) + (c + d) * (b + d);
+    return (n2 * (a + d) - tmp) / (n2 * n2 - tmp);
 }
 
 void free_labels(uint32_t *labels)

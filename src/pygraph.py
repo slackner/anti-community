@@ -159,13 +159,41 @@ lib.graph_get_connected_components.restype = POINTER(c_uint)
 lib.decode_labels.argtypes = (npc.ndpointer(dtype=np.uint32), c_uint)
 lib.decode_labels.restype = POINTER(c_uint)
 
+lib.count_labels.argtypes = (npc.ndpointer(dtype=np.uint32), c_uint)
+lib.count_labels.restype = c_uint
+
 lib.simplify_labels_inplace.argtypes = (npc.ndpointer(dtype=np.uint32), c_uint)
-lib.simplify_labels_inplace.restype = c_int
+lib.simplify_labels_inplace.restype = c_uint
 
 lib.split_labels.argtypes = (npc.ndpointer(dtype=np.uint32), npc.ndpointer(dtype=np.uint32), c_uint)
 
-lib.count_labels.argtypes = (npc.ndpointer(dtype=np.uint32), c_uint)
-lib.count_labels.restype = c_uint
+lib.intersection_matrix.argtypes = (npc.ndpointer(dtype=np.uint32), npc.ndpointer(dtype=np.uint32), c_uint)
+lib.intersection_matrix.restype = c_graph_p
+
+lib.confusion_matrix.argtypes = (POINTER(c_double), POINTER(c_double), POINTER(c_double), POINTER(c_double),
+                                 npc.ndpointer(dtype=np.uint32), npc.ndpointer(dtype=np.uint32), c_uint)
+lib.confusion_matrix.restype = c_int
+
+lib.precision.argtypes = (npc.ndpointer(dtype=np.uint32), npc.ndpointer(dtype=np.uint32), c_uint)
+lib.precision.restype = c_double
+
+lib.recall.argtypes = (npc.ndpointer(dtype=np.uint32), npc.ndpointer(dtype=np.uint32), c_uint)
+lib.recall.restype = c_double
+
+lib.rand_index.argtypes = (npc.ndpointer(dtype=np.uint32), npc.ndpointer(dtype=np.uint32), c_uint)
+lib.rand_index.restype = c_double
+
+lib.fowlkes_mallows.argtypes = (npc.ndpointer(dtype=np.uint32), npc.ndpointer(dtype=np.uint32), c_uint)
+lib.fowlkes_mallows.restype = c_double
+
+lib.jaccard.argtypes = (npc.ndpointer(dtype=np.uint32), npc.ndpointer(dtype=np.uint32), c_uint)
+lib.jaccard.restype = c_double
+
+lib.f1_measure.argtypes = (npc.ndpointer(dtype=np.uint32), npc.ndpointer(dtype=np.uint32), c_uint)
+lib.f1_measure.restype = c_double
+
+lib.adjusted_rand_index.argtypes = (npc.ndpointer(dtype=np.uint32), npc.ndpointer(dtype=np.uint32), c_uint)
+lib.adjusted_rand_index.restype = c_double
 
 lib.free_labels.argtypes = (POINTER(c_uint),)
 
@@ -553,12 +581,24 @@ def decode_labels(indices):
     lib.free_labels(labels_p)
     return labels
 
+def count_labels(labels):
+    if len(labels.shape) != 1:
+        raise ValueError("labels array does not have correct dimensions")
+
+    labels = np.asarray(labels, dtype=np.uint32)
+    count = lib.count_labels(labels, labels.shape[0])
+    if count == 0xffffffff:
+        raise MemoryError
+
+    return count
+
 def simplify_labels(indices):
     if len(indices.shape) != 1:
         raise ValueError("indices array does not have correct dimensions")
 
     indices = np.asarray(indices.copy(), dtype=np.uint32)
-    if not lib.simplify_labels_inplace(indices, indices.shape[0]):
+    count = lib.simplify_labels_inplace(indices, indices.shape[0])
+    if count == 0xffffffff:
         raise MemoryError
 
     return indices
@@ -574,12 +614,49 @@ def split_labels(indices1, indices2):
     lib.split_labels(indices1, indices2, indices1.shape[0])
     return indices1
 
-def count_labels(labels):
-    if len(labels.shape) != 1:
-        raise ValueError("labels array does not have correct dimensions")
+def intersection_matrix(indices1, indices2):
+    if len(indices1.shape) != 1 or len(indices2.shape) != 1:
+        raise ValueError("indices array does not have correct dimensions")
+    if indices1.shape[0] != indices2.shape[0]:
+        raise ValueError("indices arrays have different length")
 
-    labels = np.asarray(labels, dtype=np.uint32)
-    return lib.count_labels(labels, labels.shape[0])
+    indices1 = np.asarray(indices1, dtype=np.uint32)
+    indices2 = np.asarray(indices2, dtype=np.uint32)
+    return Graph(obj=lib.intersection_matrix(indices1, indices2, indices1.shape[0]))
+
+def confusion_matrix(indices_true, indices_pred):
+    if len(indices_true.shape) != 1 or len(indices_pred.shape) != 1:
+        raise ValueError("indices array does not have correct dimensions")
+    if indices_true.shape[0] != indices_pred.shape[0]:
+        raise ValueError("indices arrays have different length")
+
+    indices_true = np.asarray(indices_true, dtype=np.uint32)
+    indices_pred = np.asarray(indices_pred, dtype=np.uint32)
+    a, b, c, d = c_double(), c_double(), c_double(), c_double()
+    if not lib.confusion_matrix(a, b, c, d, indices_true, indices_pred, indices_true.shape[0]):
+        raise MemoryError
+
+    return np.array([[a.value, b.value], [c.value, d.value]])
+
+def __wrap_metric(fn):
+    def wrap(indices_true, indices_pred):
+        if len(indices_true.shape) != 1 or len(indices_pred.shape) != 1:
+            raise ValueError("indices array does not have correct dimensions")
+        if indices_true.shape[0] != indices_pred.shape[0]:
+            raise ValueError("indices arrays have different length")
+
+        indices_true = np.asarray(indices_true, dtype=np.uint32)
+        indices_pred = np.asarray(indices_pred, dtype=np.uint32)
+        return fn(indices_true, indices_pred, indices_true.shape[0])
+    return wrap
+
+precision           = __wrap_metric(lib.precision)
+recall              = __wrap_metric(lib.recall)
+rand_index          = __wrap_metric(lib.rand_index)
+fowlkes_mallows     = __wrap_metric(lib.fowlkes_mallows)
+jaccard             = __wrap_metric(lib.jaccard)
+f1_measure          = __wrap_metric(lib.f1_measure)
+adjusted_rand_index = __wrap_metric(lib.adjusted_rand_index)
 
 if __name__ == '__main__':
     import itertools
@@ -1032,6 +1109,87 @@ if __name__ == '__main__':
             indices2 = np.array([0, 1, 1, 1, 0, 0, 1, 0, 1])
             labels = split_labels(indices1, indices2)
             self.assertEqual(labels.tolist(), [0, 1, 3, 3, 0, 2, 5, 4, 5])
+
+        # FIXME: Compare with contingency_matrix from sklearn.metrics.cluster.supervised
+        def test_intersection_matrix(self):
+            indices1 = np.array([5, 5, 7, 7, 5, 7, 8, 8, 8])
+            indices2 = np.array([0, 1, 1, 1, 0, 0, 1, 0, 1])
+            g = intersection_matrix(indices1, indices2)
+            self.assertEqual(g.edges().tolist(), [[0, 0], [0, 1], [1, 0], [1, 1], [2, 0], [2, 1]])
+            self.assertEqual(g.weights().tolist(), [2.0, 1.0, 1.0, 2.0, 1.0, 2.0])
+            del g
+
+        def test_confusion_matrix(self):
+            indices_true = np.array([1, 1, 1, 1, 1, 2, 1, 2, 2, 2, 2, 3, 1, 1, 3, 3, 3])
+            indices_pred = np.array([1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3])
+            m = confusion_matrix(indices_true, indices_pred)
+            self.assertEqual(m[0, 0], 20.0) # TP
+            self.assertEqual(m[0, 1], 20.0) # FP
+            self.assertEqual(m[1, 0], 24.0) # FN
+            self.assertEqual(m[1, 1], 72.0) # TN
+
+        # FIXME: We need more tests to cover all relevant cases
+        def test_metrics(self):
+            indices_true = np.array([5, 5, 7, 7, 5, 7, 8, 8, 8])
+            indices_pred = np.array([0, 1, 1, 1, 0, 0, 1, 0, 1])
+            val = precision(indices_true, indices_pred)
+            self.assertAlmostEqual(val, 0.1875000, places=6)
+            val = recall(indices_true, indices_pred)
+            self.assertAlmostEqual(val, 0.3333333, places=6)
+            val = rand_index(indices_true, indices_pred)
+            self.assertAlmostEqual(val, 0.4722222, places=6)
+            val = fowlkes_mallows(indices_true, indices_pred)
+            self.assertAlmostEqual(val, 0.2500000, places=6)
+            val = jaccard(indices_true, indices_pred)
+            self.assertAlmostEqual(val, 0.1363636, places=6)
+            val = f1_measure(indices_true, indices_pred)
+            self.assertAlmostEqual(val, 0.2400000, places=6)
+            val = adjusted_rand_index(indices_true, indices_pred)
+            self.assertAlmostEqual(val, -0.1176470, places=6)
+
+            indices_pred = np.array([5, 5, 7, 7, 5, 7, 8, 8, 8])
+            val = precision(indices_true, indices_pred)
+            self.assertEqual(val, 1.0)
+            val = recall(indices_true, indices_pred)
+            self.assertEqual(val, 1.0)
+            val = rand_index(indices_true, indices_pred)
+            self.assertEqual(val, 1.0)
+            val = fowlkes_mallows(indices_true, indices_pred)
+            self.assertEqual(val, 1.0)
+            val = jaccard(indices_true, indices_pred)
+            self.assertEqual(val, 1.0)
+            val = f1_measure(indices_true, indices_pred)
+            self.assertEqual(val, 1.0)
+            val = adjusted_rand_index(indices_true, indices_pred)
+            self.assertEqual(val, 1.0)
+
+            for indices_true in (np.array([1, 1, 1, 1, 1, 1, 1, 1, 1]),
+                                 np.array([0, 1, 2, 3, 4, 5, 6, 7, 8])):
+                for indices_pred in (np.array([1, 1, 1, 1, 1, 1, 1, 1, 1]),
+                                     np.array([0, 1, 2, 3, 4, 5, 6, 7, 8])):
+                    expected = 1.0 if np.array_equal(indices_true, indices_pred) else 0.0
+
+                    val = precision(indices_true, indices_pred)
+                    self.assertEqual(val, expected)
+                    val = recall(indices_true, indices_pred)
+                    self.assertEqual(val, expected)
+                    val = rand_index(indices_true, indices_pred)
+                    self.assertEqual(val, expected)
+                    val = fowlkes_mallows(indices_true, indices_pred)
+                    self.assertEqual(val, expected)
+                    val = jaccard(indices_true, indices_pred)
+                    self.assertEqual(val, expected)
+                    val = f1_measure(indices_true, indices_pred)
+                    self.assertEqual(val, expected)
+                    val = adjusted_rand_index(indices_true, indices_pred)
+                    self.assertEqual(val, expected)
+
+            indices_true = np.array([1, 1, 1, 1, 1, 2, 1, 2, 2, 2, 2, 3, 1, 1, 3, 3, 3])
+            indices_pred = np.array([1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3])
+            val = precision(indices_true, indices_pred)
+            self.assertAlmostEqual(val, 0.5000000, places=6)
+            val = recall(indices_true, indices_pred)
+            self.assertAlmostEqual(val, 0.4545454, places=6)
 
         def test_bfs(self):
             g = Graph(5, directed=True)

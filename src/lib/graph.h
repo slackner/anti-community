@@ -338,9 +338,23 @@ void print_labels(FILE *file, uint32_t *labels, uint32_t num_nodes);
 /* count number of unique labels */
 uint32_t count_labels(const uint32_t *labels, uint32_t num_nodes);
 /* simplify labels (replace with small integer numbers) */
-int simplify_labels_inplace(uint32_t *labels, uint32_t num_nodes);
+uint32_t *simplify_labels(const uint32_t *labels, uint32_t num_nodes, uint32_t *count_out);
+uint32_t simplify_labels_inplace(uint32_t *labels, uint32_t num_nodes);
 /* split labels (e.g. based on connected components) */
 void split_labels(uint32_t *labels1, const uint32_t *labels2, uint32_t num_nodes);
+/* compute the intersection matrix using two label vectors */
+struct graph *intersection_matrix(const uint32_t *labels1, const uint32_t *labels2, uint32_t num_nodes);
+/* compute the confusion matrix using two label vectors */
+int confusion_matrix(double *a_out, double *b_out, double *c_out, double *d_out,
+                     const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes);
+/* compute pair counting measures */
+double precision(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes);
+double recall(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes);
+double rand_index(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes);
+double fowlkes_mallows(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes);
+double jaccard(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes);
+double f1_measure(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes);
+double adjusted_rand_index(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes);
 /* deallocate memory for labels */
 void free_labels(uint32_t *labels);
 /* compute modularity of a graph - COMPLEXITY: O(m + n log(n)) */

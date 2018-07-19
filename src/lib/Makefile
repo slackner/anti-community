@@ -6,7 +6,7 @@ all: libgraph.so
 libgraph.so: $(wildcard *.c *.h)
 	gcc -O2 -g -Werror -Wall -fstack-protector-strong -fPIC \
 		-shared -Wl,-soname,libgraph.so -Wl,--no-undefined \
-		-o libgraph.so $^
+		-o libgraph.so $^ -lm
 
 tests: tests.c graph.h internal.h libgraph.so
 	gcc -O2 -g -Werror -Wall -fstack-protector-strong -o $@ $< $(LDFLAGS)
