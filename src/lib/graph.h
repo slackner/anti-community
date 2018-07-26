@@ -355,6 +355,8 @@ double fowlkes_mallows(const uint32_t *labels_true, const uint32_t *labels_pred,
 double jaccard(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes);
 double f1_measure(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes);
 double adjusted_rand_index(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes);
+/* compute the normalized mutual information */
+double norm_mutual_info(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes);
 /* deallocate memory for labels */
 void free_labels(uint32_t *labels);
 /* compute modularity of a graph - COMPLEXITY: O(m + n log(n)) */

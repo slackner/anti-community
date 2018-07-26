@@ -195,6 +195,9 @@ lib.f1_measure.restype = c_double
 lib.adjusted_rand_index.argtypes = (npc.ndpointer(dtype=np.uint32), npc.ndpointer(dtype=np.uint32), c_uint)
 lib.adjusted_rand_index.restype = c_double
 
+lib.norm_mutual_info.argtypes = (npc.ndpointer(dtype=np.uint32), npc.ndpointer(dtype=np.uint32), c_uint)
+lib.norm_mutual_info.restype = c_double
+
 lib.free_labels.argtypes = (POINTER(c_uint),)
 
 lib.modularity.argtypes = (c_graph_p, npc.ndpointer(dtype=np.uint32))
@@ -657,6 +660,7 @@ fowlkes_mallows     = __wrap_metric(lib.fowlkes_mallows)
 jaccard             = __wrap_metric(lib.jaccard)
 f1_measure          = __wrap_metric(lib.f1_measure)
 adjusted_rand_index = __wrap_metric(lib.adjusted_rand_index)
+norm_mutual_info    = __wrap_metric(lib.norm_mutual_info)
 
 if __name__ == '__main__':
     import itertools
@@ -1146,6 +1150,8 @@ if __name__ == '__main__':
             self.assertAlmostEqual(val, 0.2400000, places=6)
             val = adjusted_rand_index(indices_true, indices_pred)
             self.assertAlmostEqual(val, -0.1176470, places=6)
+            val = norm_mutual_info(indices_true, indices_pred)
+            self.assertAlmostEqual(val, 0.05650554, places=6)
 
             indices_pred = np.array([5, 5, 7, 7, 5, 7, 8, 8, 8])
             val = precision(indices_true, indices_pred)
@@ -1161,6 +1167,8 @@ if __name__ == '__main__':
             val = f1_measure(indices_true, indices_pred)
             self.assertEqual(val, 1.0)
             val = adjusted_rand_index(indices_true, indices_pred)
+            self.assertEqual(val, 1.0)
+            val = norm_mutual_info(indices_true, indices_pred)
             self.assertEqual(val, 1.0)
 
             for indices_true in (np.array([1, 1, 1, 1, 1, 1, 1, 1, 1]),
@@ -1182,6 +1190,8 @@ if __name__ == '__main__':
                     val = f1_measure(indices_true, indices_pred)
                     self.assertEqual(val, expected)
                     val = adjusted_rand_index(indices_true, indices_pred)
+                    self.assertEqual(val, expected)
+                    val = norm_mutual_info(indices_true, indices_pred)
                     self.assertEqual(val, expected)
 
             indices_true = np.array([1, 1, 1, 1, 1, 2, 1, 2, 2, 2, 2, 3, 1, 1, 3, 3, 3])

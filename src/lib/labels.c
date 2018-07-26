@@ -377,6 +377,63 @@ double adjusted_rand_index(const uint32_t *labels_true, const uint32_t *labels_p
     return (n2 * (a + d) - tmp) / (n2 * n2 - tmp);
 }
 
+double norm_mutual_info(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes)
+{
+    double h1 = 0.0, h2 = 0.0, mi = 0.0;
+    struct link *link;
+    struct graph *g;
+    double *p1, *p2;
+    double tmp;
+    uint32_t i;
+
+    if (!(g = intersection_matrix(labels_true, labels_pred, num_nodes)))
+        return NAN;
+
+    if (!(p1 = graph_out_weights(g)))
+    {
+        free_graph(g);
+        return NAN;
+    }
+
+    if (!(p2 = graph_in_weights(g)))
+    {
+        free_graph(g);
+        free(p1);
+        return NAN;
+    }
+
+    for (i = 0; i < g->num_nodes; i++)
+    {
+        if (p1[i] <= 0.0) continue;
+        p1[i] /= num_nodes;
+        h1 -= p1[i] * log(p1[i]);
+    }
+
+    for (i = 0; i < g->num_nodes; i++)
+    {
+        if (p2[i] <= 0.0) continue;
+        p2[i] /= num_nodes;
+        h2 -= p2[i] * log(p2[i]);
+    }
+
+    GRAPH_FOR_EACH_EDGE(g, i, link)
+    {
+        if (link->weight <= 0.0) continue;
+        tmp = (double)link->weight / num_nodes;
+        mi += tmp * log(tmp / (p1[i] * p2[link->index]));
+    }
+
+    if (h1 != 0.0 || h2 != 0.0)
+        mi = 2.0 * mi / (h1 + h2);
+    else
+        mi = 1.0;
+
+    free_graph(g);
+    free(p1);
+    free(p2);
+    return mi;
+}
+
 void free_labels(uint32_t *labels)
 {
     free(labels);
