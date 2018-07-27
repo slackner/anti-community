@@ -210,12 +210,11 @@ void split_labels(uint32_t *labels1, const uint32_t *labels2, uint32_t num_nodes
         uint32_t index = lookup[i];
         uint32_t label1 = labels1[index];
         uint32_t label2 = labels2[index];
-        while (i < num_nodes)
+        for (; i < num_nodes; i++)
         {
             index = lookup[i];
             if (labels1[index] != label1 || labels2[index] != label2) break;
             labels1[index] = count;
-            i++;
         }
         count++;
     }
@@ -301,6 +300,69 @@ int confusion_matrix(double *a_out, double *b_out, double *c_out, double *d_out,
     return 1;
 }
 
+/* only compare pairs of nodes within the same connected component */
+int confusion_matrix_comp(double *a_out, double *b_out, double *c_out, double *d_out,
+                          const uint32_t *labels_true, const uint32_t *labels_pred, const struct graph *g)
+{
+    double a = 0.0, b = 0.0, c = 0.0, d = 0.0;
+    double a_comp, b_comp, c_comp, d_comp;
+    uint32_t *labels_true_comp;
+    uint32_t *labels_pred_comp;
+    uint32_t *components;
+    uint32_t *lookup;
+    uint32_t i, j;
+
+    if (!(components = graph_get_connected_components(g)))
+        return 0;
+
+    if (!(lookup = xmalloc(sizeof(*lookup) * g->num_nodes * 3)))
+    {
+        free(components);
+        return 0;
+    }
+
+    labels_true_comp = &lookup[g->num_nodes];
+    labels_pred_comp = &lookup[g->num_nodes * 2];
+
+    for (i = 0; i < g->num_nodes; i++) lookup[i] = i;
+    qsort_r(lookup, g->num_nodes, sizeof(lookup[0]), _sort_index_by_label, (void *)components);
+
+    for (i = 0; i < g->num_nodes;)
+    {
+        uint32_t index = lookup[i];
+        uint32_t label = components[index];
+        for (j = 0; i < g->num_nodes; i++, j++)
+        {
+            index = lookup[i];
+            if (components[index] != label) break;
+            labels_true_comp[j] = labels_true[index];
+            labels_pred_comp[j] = labels_pred[index];
+        }
+
+        if (!confusion_matrix(&a_comp, &b_comp, &c_comp, &d_comp,
+                              labels_true_comp, labels_pred_comp, j))
+        {
+            free(components);
+            free(lookup);
+            return 0;
+        }
+
+        a += a_comp;
+        b += b_comp;
+        c += c_comp;
+        d += d_comp;
+    }
+
+    if (a_out) *a_out = a;
+    if (b_out) *b_out = b;
+    if (c_out) *c_out = c;
+    if (d_out) *d_out = d;
+
+    free(components);
+    free(lookup);
+    return 1;
+}
+
 double precision(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes)
 {
     double a, b, c;
@@ -364,12 +426,25 @@ double f1_measure(const uint32_t *labels_true, const uint32_t *labels_pred, uint
     return (2.0 * a) / (2.0 * a + b + c);
 }
 
-double adjusted_rand_index(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes)
+double adj_rand_index(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes)
 {
     double a, b, c, d;
     double n2, tmp;
 
     if (!confusion_matrix(&a, &b, &c, &d, labels_true, labels_pred, num_nodes)) return NAN;
+    if (b == 0.0 && c == 0.0) return 1.0;
+
+    n2  = a + b + c + d;
+    tmp = (a + b) * (a + c) + (c + d) * (b + d);
+    return (n2 * (a + d) - tmp) / (n2 * n2 - tmp);
+}
+
+double adj_rand_index_comp(const uint32_t *labels_true, const uint32_t *labels_pred, const struct graph *g)
+{
+    double a, b, c, d;
+    double n2, tmp;
+
+    if (!confusion_matrix_comp(&a, &b, &c, &d, labels_true, labels_pred, g)) return NAN;
     if (b == 0.0 && c == 0.0) return 1.0;
 
     n2  = a + b + c + d;

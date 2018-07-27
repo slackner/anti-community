@@ -41,7 +41,7 @@ METRIC_WRAP(rand_index);
 METRIC_WRAP(fowlkes_mallows);
 METRIC_WRAP(jaccard);
 METRIC_WRAP(f1_measure);
-METRIC_WRAP(adjusted_rand_index);
+METRIC_WRAP(adj_rand_index);
 METRIC_WRAP(norm_mutual_info);
 
 #undef METRIC_FUNC
@@ -55,21 +55,22 @@ struct metric_function
 
 static const struct metric_function metrics[] =
 {
-    { "#nodes",             metric_nodes                },
-    { "#edges",             metric_edges                },
-    { "#diagonal",          metric_diagonal             },
-    { "#communities",       metric_communities          },
-    { "modularity",         metric_modularity           },
-    { "antimodularity",     metric_antimodularity       },
-    { "density",            metric_density              },
-    { "precision",          metric_precision            },
-    { "recall",             metric_recall               },
-    { "rand-index",         metric_rand_index           },
-    { "fowlkes-mallows",    metric_fowlkes_mallows      },
-    { "jaccard",            metric_jaccard              },
-    { "f1-measure",         metric_f1_measure           },
-    { "adj-rand-index",     metric_adjusted_rand_index  },
-    { "norm-mutual-info",   metric_norm_mutual_info     },
+    { "#nodes",                 metric_nodes                },
+    { "#edges",                 metric_edges                },
+    { "#diagonal",              metric_diagonal             },
+    { "#communities",           metric_communities          },
+    { "modularity",             metric_modularity           },
+    { "antimodularity",         metric_antimodularity       },
+    { "density",                metric_density              },
+    { "precision",              metric_precision            },
+    { "recall",                 metric_recall               },
+    { "rand-index",             metric_rand_index           },
+    { "fowlkes-mallows",        metric_fowlkes_mallows      },
+    { "jaccard",                metric_jaccard              },
+    { "f1-measure",             metric_f1_measure           },
+    { "adj-rand-index",         metric_adj_rand_index       },
+    { "adj-rand-index-comp",    adj_rand_index_comp         },
+    { "norm-mutual-info",       metric_norm_mutual_info     },
 };
 
 static void usage(const char *argv0)

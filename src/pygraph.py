@@ -192,8 +192,11 @@ lib.jaccard.restype = c_double
 lib.f1_measure.argtypes = (npc.ndpointer(dtype=np.uint32), npc.ndpointer(dtype=np.uint32), c_uint)
 lib.f1_measure.restype = c_double
 
-lib.adjusted_rand_index.argtypes = (npc.ndpointer(dtype=np.uint32), npc.ndpointer(dtype=np.uint32), c_uint)
-lib.adjusted_rand_index.restype = c_double
+lib.adj_rand_index.argtypes = (npc.ndpointer(dtype=np.uint32), npc.ndpointer(dtype=np.uint32), c_uint)
+lib.adj_rand_index.restype = c_double
+
+lib.adj_rand_index_comp.argtypes = (npc.ndpointer(dtype=np.uint32), npc.ndpointer(dtype=np.uint32), c_graph_p)
+lib.adj_rand_index_comp.restype = c_double
 
 lib.norm_mutual_info.argtypes = (npc.ndpointer(dtype=np.uint32), npc.ndpointer(dtype=np.uint32), c_uint)
 lib.norm_mutual_info.restype = c_double
@@ -574,6 +577,16 @@ class Graph(object):
         assert self.directed
         return lib.graph_reciprocity(self.obj)
 
+    def adj_rand_index_comp(self, indices_true, indices_pred):
+        if len(indices_true.shape) != 1 or len(indices_pred.shape) != 1:
+            raise ValueError("indices array does not have correct dimensions")
+        if indices_true.shape[0] != indices_pred.shape[0]:
+            raise ValueError("indices arrays have different length")
+
+        indices_true = np.asarray(indices_true, dtype=np.uint32)
+        indices_pred = np.asarray(indices_pred, dtype=np.uint32)
+        return lib.adj_rand_index_comp(indices_true, indices_pred, self.obj)
+
 def decode_labels(indices):
     if len(indices.shape) != 1:
         raise ValueError("indices array does not have correct dimensions")
@@ -659,7 +672,7 @@ rand_index          = __wrap_metric(lib.rand_index)
 fowlkes_mallows     = __wrap_metric(lib.fowlkes_mallows)
 jaccard             = __wrap_metric(lib.jaccard)
 f1_measure          = __wrap_metric(lib.f1_measure)
-adjusted_rand_index = __wrap_metric(lib.adjusted_rand_index)
+adj_rand_index      = __wrap_metric(lib.adj_rand_index)
 norm_mutual_info    = __wrap_metric(lib.norm_mutual_info)
 
 if __name__ == '__main__':
@@ -1148,7 +1161,7 @@ if __name__ == '__main__':
             self.assertAlmostEqual(val, 0.1363636, places=6)
             val = f1_measure(indices_true, indices_pred)
             self.assertAlmostEqual(val, 0.2400000, places=6)
-            val = adjusted_rand_index(indices_true, indices_pred)
+            val = adj_rand_index(indices_true, indices_pred)
             self.assertAlmostEqual(val, -0.1176470, places=6)
             val = norm_mutual_info(indices_true, indices_pred)
             self.assertAlmostEqual(val, 0.05650554, places=6)
@@ -1166,7 +1179,7 @@ if __name__ == '__main__':
             self.assertEqual(val, 1.0)
             val = f1_measure(indices_true, indices_pred)
             self.assertEqual(val, 1.0)
-            val = adjusted_rand_index(indices_true, indices_pred)
+            val = adj_rand_index(indices_true, indices_pred)
             self.assertEqual(val, 1.0)
             val = norm_mutual_info(indices_true, indices_pred)
             self.assertEqual(val, 1.0)
@@ -1189,7 +1202,7 @@ if __name__ == '__main__':
                     self.assertEqual(val, expected)
                     val = f1_measure(indices_true, indices_pred)
                     self.assertEqual(val, expected)
-                    val = adjusted_rand_index(indices_true, indices_pred)
+                    val = adj_rand_index(indices_true, indices_pred)
                     self.assertEqual(val, expected)
                     val = norm_mutual_info(indices_true, indices_pred)
                     self.assertEqual(val, expected)
@@ -1404,6 +1417,39 @@ if __name__ == '__main__':
             self.assertEqual(g.reciprocity(), 1.0)
             del g[0, 2]
             self.assertEqual(g.reciprocity(), 5.0 / 6.0)
+            del g
+
+        def test_adj_rand_index_comp(self):
+            g = Graph(num_nodes=4, directed=False)
+            g[0, 1] = g[2, 3] = 1.0
+
+            indices_true = np.array([0, 1, 0, 1])
+            indices_pred = np.array([0, 1, 2, 3])
+            val = adj_rand_index(indices_true, indices_pred)
+            self.assertEqual(val, 0.0)
+            val = g.adj_rand_index_comp(indices_true, indices_pred)
+            self.assertEqual(val, 1.0)
+
+            indices_true = np.array([0, 1, 0, 1])
+            indices_pred = np.array([0, 1, 0, 3])
+            val = adj_rand_index(indices_true, indices_pred)
+            self.assertAlmostEqual(val, 0.5714286, places=6)
+            val = g.adj_rand_index_comp(indices_true, indices_pred)
+            self.assertEqual(val, 1.0)
+
+            indices_true = np.array([0, 1, 0, 1])
+            indices_pred = np.array([0, 1, 1, 0])
+            val = adj_rand_index(indices_true, indices_pred)
+            self.assertEqual(val, -0.5)
+            val = g.adj_rand_index_comp(indices_true, indices_pred)
+            self.assertEqual(val, 1.0)
+
+            indices_true = np.array([0, 1, 0, 1])
+            indices_pred = np.array([0, 1, 1, 1])
+            val = adj_rand_index(indices_true, indices_pred)
+            self.assertEqual(val, 0.0)
+            val = g.adj_rand_index_comp(indices_true, indices_pred)
+            self.assertEqual(val, 0.0)
             del g
 
         def test_batch(self):

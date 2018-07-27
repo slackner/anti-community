@@ -347,6 +347,8 @@ struct graph *intersection_matrix(const uint32_t *labels1, const uint32_t *label
 /* compute the confusion matrix using two label vectors */
 int confusion_matrix(double *a_out, double *b_out, double *c_out, double *d_out,
                      const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes);
+int confusion_matrix_comp(double *a_out, double *b_out, double *c_out, double *d_out,
+                          const uint32_t *labels_true, const uint32_t *labels_pred, const struct graph *g);
 /* compute pair counting measures */
 double precision(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes);
 double recall(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes);
@@ -354,7 +356,8 @@ double rand_index(const uint32_t *labels_true, const uint32_t *labels_pred, uint
 double fowlkes_mallows(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes);
 double jaccard(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes);
 double f1_measure(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes);
-double adjusted_rand_index(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes);
+double adj_rand_index(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes);
+double adj_rand_index_comp(const uint32_t *labels_true, const uint32_t *labels_pred, const struct graph *g);
 /* compute the normalized mutual information */
 double norm_mutual_info(const uint32_t *labels_true, const uint32_t *labels_pred, uint32_t num_nodes);
 /* deallocate memory for labels */
