@@ -86,9 +86,10 @@ $ src/antimodularity
 $ src/components
 	Return connected components of an undirected graph.
 
-$ src/modularity
+$ src/metrics
 	Compute modularity and anti-modularity for the graph specified by the given
-	file.
+	file. When a ground-truth label file is given, also compute cluster quality
+	metrics.
 
 $ src/subgraph
 	Extract subgraph specified by the given files.
@@ -139,8 +140,9 @@ Evaluation
 To compute the modularity and anti-modularity measure, as well as some other
 statistical values for a community detection result, just run:
 
-$ ./src/modularity --clusters=datasets/adjectives-noun/minmodularity.txt \
-$                  datasets/adjectives-noun/result.graph
+$ ./src/metrics --clusters=datasets/adjectives-noun/minmodularity.txt \
+$               --groundtruth=datasets/adjectives-noun/ground-truth.txt \
+$               datasets/adjectives-noun/result.graph
 
 The output will contain one measure per line. To write the result to a file,
 the operator ">" can be used, as in the example above.
