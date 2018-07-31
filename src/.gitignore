@@ -3,8 +3,8 @@ components
 gml
 laprop
 maxmodularity
+metrics
 minmodularity
-modularity
 subgraph
 tests
 *.pyc
