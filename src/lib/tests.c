@@ -131,6 +131,25 @@ static void test_for_each_edge_directed(void)
     }
     assert(expected == 0.0);
 
+    expected = 0.0;
+    GRAPH_FOR_EACH_LINK_ANY(g, &empty, i, link)
+    {
+        assert(!link);
+        assert(i == expected);
+        expected += 1.0;
+    }
+    assert(expected == 4.0);
+
+    expected = 0.0;
+    GRAPH_FOR_EACH_LINK_ANY(g, &g->nodes[1], i, link)
+    {
+        if (i == 0) assert(link->weight == 5.0);
+        else assert(!link);
+        assert(i == expected);
+        expected += 1.0;
+    }
+    assert(expected == 4.0);
+
     expected = 1.0;
     GRAPH_FOR_EACH_EDGE_SORTED(g, i, link)
     {

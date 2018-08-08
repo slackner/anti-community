@@ -94,6 +94,8 @@ lib.graph_get_edge.restype = c_float
 lib.graph_get_edges.argtypes = (c_graph_p, or_null(npc.ndpointer(dtype=np.uint32)), or_null(npc.ndpointer(dtype=np.float32)), c_uint64)
 lib.graph_get_edges.restype = c_uint64
 
+lib.graph_get_weights.argtypes = (c_graph_p, npc.ndpointer(dtype=np.float32))
+
 lib.graph_set_edge.argtypes = (c_graph_p, c_uint, c_uint, c_float)
 
 lib.graph_set_edges.argtypes = (c_graph_p, npc.ndpointer(dtype=np.uint32), npc.ndpointer(dtype=np.float32), c_uint64)
@@ -412,6 +414,11 @@ class Graph(object):
         num_links = lib.graph_get_edges(self.obj, None, weights, max_links)
         assert num_links == max_links
         return weights
+
+    def matrix(self):
+        matrix = np.empty(shape=(self.num_nodes, self.num_nodes), dtype=np.float32, order='C')
+        lib.graph_get_weights(self.obj, matrix)
+        return matrix
 
     def merge_nodes_add(self, index1, index2):
         lib.graph_merge_nodes_add(self.obj, index1, index2)
@@ -1467,6 +1474,15 @@ if __name__ == '__main__':
             self.assertEqual(g.weights().tolist(), [1.0, 2.0, 3.0])
             g.del_edges(edges)
             self.assertEqual(g.edges().tolist(), [])
+            del g
+
+        def test_matrix(self):
+            g = Graph(num_nodes=3, directed=True)
+            g[0, 2] = 1.0
+            g[1, 2] = 2.0
+            g[2, 2] = 3.0
+            expected = [[0.0, 0.0, 1.0], [0.0, 0.0, 2.0], [0.0, 0.0, 3.0]]
+            self.assertTrue(np.array_equal(g.matrix(), expected))
             del g
 
     # Run the unit tests ...

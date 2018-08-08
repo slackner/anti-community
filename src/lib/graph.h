@@ -66,6 +66,7 @@ struct _graph_iter
 {
     struct link *link;
     struct link *end_link;
+    uint32_t    num_nodes;
 };
 
 struct _graph_iter2
@@ -150,27 +151,47 @@ static inline int __graph_next_link2(struct _graph_iter2 *iter, struct link **li
     }
 }
 
-static inline struct _graph_iter __graph_for_each_nonexistent_link(struct adjacency *adj, uint32_t *index)
+static inline struct _graph_iter __graph_for_each_link_sorted(const struct graph *g, struct adjacency *adj, uint32_t *index)
 {
     struct _graph_iter iter;
 
     iter.end_link = __graph_for_each_link(sort_adjacency(adj), &iter.link);
-    if (iter.link == iter.end_link) iter.link = NULL;
+    iter.num_nodes = g->num_nodes;
     *index = 0;
 
     return iter;
 }
 
-static inline int __graph_next_nonexistent_link(struct graph *g, struct _graph_iter *iter, uint32_t *index)
+static inline int __graph_next_nonexistent_link(struct _graph_iter *iter, uint32_t *index)
 {
-    for (; *index < g->num_nodes; (*index)++)
+    for (; *index < iter->num_nodes; (*index)++)
     {
-        if (!iter->link || iter->link->index != *index) return 1;
-        if (++iter->link == iter->end_link) iter->link = NULL;
+        if (iter->link == iter->end_link ||
+            iter->link->index != *index) return 1;
+        iter->link++;
     }
 
-    assert(!iter->link);
+    assert(iter->link == iter->end_link);
     return 0;
+}
+
+static inline int __graph_next_link_any(struct _graph_iter *iter, uint32_t *index, struct link **link)
+{
+    if (*index >= iter->num_nodes)
+    {
+        assert(iter->link == iter->end_link);
+        return 0;
+    }
+
+    if (iter->link != iter->end_link &&
+        iter->link->index == *index)
+    {
+        *link = iter->link++;
+        return 1;
+    }
+
+    *link = NULL;
+    return 1;
 }
 
 #define _GRAPH_FOR_EACH_LINK(_adj, _link, _end_link) \
@@ -219,11 +240,18 @@ static inline int __graph_next_nonexistent_link(struct graph *g, struct _graph_i
     _GRAPH_FOR_EACH_LINK2((_adj1), (_link1), (_adj2), (_link2), _UNIQUE_VARIABLE(__iter_))
 
 #define _GRAPH_FOR_EACH_NONEXISTENT_LINK(_g, _adj, _i, _iter) \
-    for (struct _graph_iter (_iter) = __graph_for_each_nonexistent_link((_adj), &(_i)); \
-         __graph_next_nonexistent_link((_g), &(_iter), &(_i)); (_i)++)
+    for (struct _graph_iter (_iter) = __graph_for_each_link_sorted((_g), (_adj), &(_i)); \
+         __graph_next_nonexistent_link(&(_iter), &(_i)); (_i)++)
 
 #define GRAPH_FOR_EACH_NONEXISTENT_LINK(_g, _adj, _i) \
     _GRAPH_FOR_EACH_NONEXISTENT_LINK((_g), (_adj), (_i), _UNIQUE_VARIABLE(__iter_))
+
+#define _GRAPH_FOR_EACH_LINK_ANY(_g, _adj, _i, _link, _iter) \
+    for (struct _graph_iter (_iter) = __graph_for_each_link_sorted((_g), (_adj), &(_i)); \
+         __graph_next_link_any(&(_iter), &(_i), &(_link)); (_i)++)
+
+#define GRAPH_FOR_EACH_LINK_ANY(_g, _adj, _i, _link) \
+    _GRAPH_FOR_EACH_LINK_ANY((_g), (_adj), (_i), (_link), _UNIQUE_VARIABLE(__iter_))
 
 /* allocate memory and exit on failure */
 void *xmalloc(size_t size);
@@ -272,6 +300,7 @@ int graph_has_edge(const struct graph *g, uint32_t start, uint32_t end);
 /* get weight associated with an edge */
 float graph_get_edge(const struct graph *g, uint32_t start, uint32_t end);
 uint64_t graph_get_edges(const struct graph *g, uint32_t *edges, float *weights, uint64_t max_edges);
+void graph_get_weights(const struct graph *g, float *weights);
 /* set edges to a given weight */
 void graph_set_edge(struct graph *g, uint32_t start, uint32_t end, float weight);
 void graph_set_edges(struct graph *g, uint32_t *edges, float *weights, uint64_t num_edges);

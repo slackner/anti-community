@@ -437,6 +437,21 @@ uint64_t graph_get_edges(const struct graph *g, uint32_t *edges, float *weights,
     return count;
 }
 
+void graph_get_weights(const struct graph *g, float *weights)
+{
+    struct link *link;
+    uint32_t i, j;
+    float *val = weights;
+
+    for (i = 0; i < g->num_nodes; i++)
+    {
+        GRAPH_FOR_EACH_LINK_ANY(g, &g->nodes[i], j, link)
+        {
+            *val++ = link ? link->weight : 0.0;
+        }
+    }
+}
+
 void graph_set_edge(struct graph *g, uint32_t start, uint32_t end, float weight)
 {
     struct link *link;
