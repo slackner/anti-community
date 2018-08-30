@@ -22,14 +22,11 @@ void graph_merge_nodes_add(struct graph *g, uint32_t index0, uint32_t index1)
 
     if (g->flags & GRAPH_FLAGS_DIRECTED)
     {
-        if (adj->links)
+        GRAPH_FOR_EACH_LINK(adj, link)
         {
-            GRAPH_FOR_EACH_LINK(adj, link)
-            {
-                _add_edge(g, index0, link->index, link->weight);
-            }
-            free_adjacency(adj);
+            _add_edge(g, index0, link->index, link->weight);
         }
+        free_adjacency(adj);
 
         for (i = 0; i < g->num_nodes; i++)
         {
@@ -41,7 +38,7 @@ void graph_merge_nodes_add(struct graph *g, uint32_t index0, uint32_t index1)
             }
         }
     }
-    else if (adj->links)
+    else
     {
         GRAPH_FOR_EACH_LINK(adj, link)
         {
@@ -79,14 +76,11 @@ void graph_merge_nodes_min(struct graph *g, uint32_t index0, uint32_t index1)
 
     if (g->flags & GRAPH_FLAGS_DIRECTED)
     {
-        if (adj->links)
+        GRAPH_FOR_EACH_LINK(adj, link)
         {
-            GRAPH_FOR_EACH_LINK(adj, link)
-            {
-                _min_edge(g, index0, link->index, link->weight);
-            }
-            free_adjacency(adj);
+            _min_edge(g, index0, link->index, link->weight);
         }
+        free_adjacency(adj);
 
         for (i = 0; i < g->num_nodes; i++)
         {
@@ -98,7 +92,7 @@ void graph_merge_nodes_min(struct graph *g, uint32_t index0, uint32_t index1)
             }
         }
     }
-    else if (adj->links)
+    else
     {
         GRAPH_FOR_EACH_LINK(adj, link)
         {
@@ -136,14 +130,11 @@ void graph_merge_nodes_max(struct graph *g, uint32_t index0, uint32_t index1)
 
     if (g->flags & GRAPH_FLAGS_DIRECTED)
     {
-        if (adj->links)
+        GRAPH_FOR_EACH_LINK(adj, link)
         {
-            GRAPH_FOR_EACH_LINK(adj, link)
-            {
-                _max_edge(g, index0, link->index, link->weight);
-            }
-            free_adjacency(adj);
+            _max_edge(g, index0, link->index, link->weight);
         }
+        free_adjacency(adj);
 
         for (i = 0; i < g->num_nodes; i++)
         {
@@ -155,7 +146,7 @@ void graph_merge_nodes_max(struct graph *g, uint32_t index0, uint32_t index1)
             }
         }
     }
-    else if (adj->links)
+    else
     {
         GRAPH_FOR_EACH_LINK(adj, link)
         {
@@ -192,26 +183,22 @@ void graph_merge_nodes_custom(struct graph *g, uint32_t index0, uint32_t index1,
     if (index0 == index1) return;
 
     adj = &g->nodes[index1];
+    constant = beta * graph_get_edge(g, index0, index1);
 
-    if (adj->links)
+    GRAPH_FOR_EACH_LINK(adj, link1)
     {
-        constant = beta * graph_get_edge(g, index0, index1);
-
-        GRAPH_FOR_EACH_LINK(adj, link1)
+        if (link1->index == index1) continue;
+        if (link1->index != index0 && (link0 = _get_link(&g->nodes[index0], link1->index, 1)))
         {
-            if (link1->index == index1) continue;
-            if (link1->index != index0 && (link0 = _get_link(&g->nodes[index0], link1->index, 1)))
-            {
-                weight = alpha1 * link0->weight + alpha2 * link1->weight +
-                         constant + gamma * abs(link0->weight - link1->weight);
+            weight = alpha1 * link0->weight + alpha2 * link1->weight +
+                     constant + gamma * abs(link0->weight - link1->weight);
 
-                link0->weight = weight;
-                _set_edge(g, link1->index, index0, weight);
-            }
-            _del_edge(g, link1->index, index1);
+            link0->weight = weight;
+            _set_edge(g, link1->index, index0, weight);
         }
-
-        _del_edge(g, index0, index0);
-        free_adjacency(adj);
+        _del_edge(g, link1->index, index1);
     }
+
+    _del_edge(g, index0, index0);
+    free_adjacency(adj);
 }
