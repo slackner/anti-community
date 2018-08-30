@@ -156,7 +156,6 @@ struct graph *transpose_graph(const struct graph *g)
 
 struct graph *invert_graph(const struct graph *g, double max_weight, int self_loops)
 {
-    struct adjacency *adj;
     struct graph *dst;
     struct link *link;
     uint32_t i, j;
@@ -166,17 +165,13 @@ struct graph *invert_graph(const struct graph *g, double max_weight, int self_lo
 
     for (i = 0; i < g->num_nodes; i++)
     {
-        adj  = sort_adjacency(&g->nodes[i]);
-        link = adj->num_links ? &adj->links[0] : NULL;
-
-        for (j = 0; j < g->num_nodes; j++)
+        GRAPH_FOR_EACH_LINK_ANY(g, &g->nodes[i], j, link)
         {
             float weight = max_weight;
 
-            if (link && link->index == j)
+            if (link)
             {
                 weight -= link->weight;
-                if (++link == &adj->links[adj->num_links]) link = NULL;
                 if (weight <= 0.0) continue;
             }
 
