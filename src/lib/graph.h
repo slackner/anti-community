@@ -307,6 +307,12 @@ void graph_set_edges(struct graph *g, uint32_t *edges, float *weights, uint64_t 
 /* add weight to a given edge */
 void graph_add_edge(struct graph *g, uint32_t start, uint32_t end, float weight);
 void graph_add_edges(struct graph *g, uint32_t *edges, float *weights, uint64_t num_edges);
+/* add weight to minimum of current edge and given value */
+void graph_min_edge(struct graph *g, uint32_t start, uint32_t end, float weight);
+void graph_min_edges(struct graph *g, uint32_t *edges, float *weights, uint64_t num_edges);
+/* set weight to maximum of current edge and given value */
+void graph_max_edge(struct graph *g, uint32_t start, uint32_t end, float weight);
+void graph_max_edges(struct graph *g, uint32_t *edges, float *weights, uint64_t num_edges);
 /* delete edge from a graph */
 void graph_del_edge(struct graph *g, uint32_t start, uint32_t end);
 void graph_del_edges(struct graph *g, uint32_t *edges, uint64_t num_edges);

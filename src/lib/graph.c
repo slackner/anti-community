@@ -485,6 +485,44 @@ void graph_add_edges(struct graph *g, uint32_t *edges, float *weights, uint64_t 
     }
 }
 
+void graph_min_edge(struct graph *g, uint32_t start, uint32_t end, float weight)
+{
+    struct link *link;
+    if (start >= g->num_nodes || end >= g->num_nodes) return;
+    if ((link = _get_link(&g->nodes[start], end, 1))) link->weight = MIN(link->weight, weight);
+    if ((g->flags & GRAPH_FLAGS_DIRECTED) || start == end) return;
+    if ((link = _get_link(&g->nodes[end], start, 1))) link->weight = MIN(link->weight, weight);
+}
+
+void graph_min_edges(struct graph *g, uint32_t *edges, float *weights, uint64_t num_edges)
+{
+    while (num_edges--)
+    {
+        graph_min_edge(g, edges[0], edges[1], weights[0]);
+        edges += 2;
+        weights++;
+    }
+}
+
+void graph_max_edge(struct graph *g, uint32_t start, uint32_t end, float weight)
+{
+    struct link *link;
+    if (start >= g->num_nodes || end >= g->num_nodes) return;
+    if ((link = _get_link(&g->nodes[start], end, 1))) link->weight = MAX(link->weight, weight);
+    if ((g->flags & GRAPH_FLAGS_DIRECTED) || start == end) return;
+    if ((link = _get_link(&g->nodes[end], start, 1))) link->weight = MAX(link->weight, weight);
+}
+
+void graph_max_edges(struct graph *g, uint32_t *edges, float *weights, uint64_t num_edges)
+{
+    while (num_edges--)
+    {
+        graph_max_edge(g, edges[0], edges[1], weights[0]);
+        edges += 2;
+        weights++;
+    }
+}
+
 void graph_del_edge(struct graph *g, uint32_t start, uint32_t end)
 {
     struct link *link;
