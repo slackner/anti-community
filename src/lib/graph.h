@@ -343,6 +343,10 @@ uint32_t *graph_in_degrees(const struct graph *g);
 double *graph_out_weights(const struct graph *g);
 /* compute in-weight sums for vertices of a graph - COMPLEXITY: O(m) */
 double *graph_in_weights(const struct graph *g);
+/* compute degree anomalies of a graph */
+double *graph_degree_anomalies(const struct graph *g);
+/* compute weight anomalies of a graph */
+double *graph_weight_anomalies(const struct graph *g);
 
 /* perform BFS on a network */
 int graph_bfs(const struct graph *g, uint32_t start, int use_weights,

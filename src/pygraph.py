@@ -140,6 +140,12 @@ lib.graph_out_weights.restype = POINTER(c_double)
 lib.graph_in_weights.argtypes = (c_graph_p,)
 lib.graph_in_weights.restype = POINTER(c_double)
 
+lib.graph_degree_anomalies.argtype = (c_graph_p,)
+lib.graph_degree_anomalies.restype = POINTER(c_double)
+
+lib.graph_weight_anomalies.argtypes = (c_graph_p,)
+lib.graph_weight_anomalies.restype = POINTER(c_double)
+
 lib.graph_bfs.argtypes = (c_graph_p, c_uint, c_int, c_bfs_callback_p, c_void_p)
 lib.graph_bfs.restype = c_int
 
@@ -248,6 +254,7 @@ GRAPH_FLAGS_UNSORTED = 0x00000004
 
 NEWMAN_FLAGS_MINIMIZE       = 0x00000001 # maximize result
 NEWMAN_FLAGS_FAST           = 0x00000002
+NEWMAN_FLAGS_MODULARITY     = 0
 NEWMAN_FLAGS_ANTIMODULARITY = 0x00000004 # maintain lookup tables for sorted weights
 NEWMAN_FLAGS_VERBOSE        = 0x00000008 # verbose output
 NEWMAN_FLAGS_STRICT         = 0x00000010 # enable assertions
@@ -481,16 +488,28 @@ class Graph(object):
         return degrees
 
     def get_out_weights(self):
-        degrees_p = lib.graph_out_weights(self.obj)
-        degrees = npc.as_array(degrees_p, shape=(self.num_nodes,)).copy()
-        libc.free(degrees_p)
-        return degrees
+        weights_p = lib.graph_out_weights(self.obj)
+        weights = npc.as_array(weights_p, shape=(self.num_nodes,)).copy()
+        libc.free(weights_p)
+        return weights
 
     def get_in_weights(self):
-        degrees_p = lib.graph_in_weights(self.obj)
-        degrees = npc.as_array(degrees_p, shape=(self.num_nodes,)).copy()
-        libc.free(degrees_p)
-        return degrees
+        weights_p = lib.graph_in_weights(self.obj)
+        weights = npc.as_array(weights_p, shape=(self.num_nodes,)).copy()
+        libc.free(weights_p)
+        return weights
+
+    def get_degree_anomalies(self):
+        results_p = lib.graph_degree_anomalies(self.obj)
+        results = npc.as_array(results_p, shape=(self.num_nodes,)).copy()
+        libc.free(results_p)
+        return results
+
+    def get_weight_anomalies(self):
+        results_p = lib.graph_weight_anomalies(self.obj)
+        results = npc.as_array(results_p, shape=(self.num_nodes,)).copy()
+        libc.free(results_p)
+        return results
 
     def bfs_count(self, start, max_count=0xffffffff):
         result = []
@@ -1338,6 +1357,28 @@ if __name__ == '__main__':
             self.assertEqual(degrees.tolist(), [2, 1])
             weights = g.get_in_weights()
             self.assertEqual(weights.tolist(), [4.0, 2.0])
+            del g
+
+        def test_degree_anomalies(self):
+            g = Graph(5, directed=False)
+
+            result = g.get_degree_anomalies()
+            self.assertEqual(result.tolist(), [0.0, 0.0, 0.0, 0.0, 0.0])
+            result = g.get_weight_anomalies()
+            self.assertEqual(result.tolist(), [0.0, 0.0, 0.0, 0.0, 0.0])
+
+            c = 0
+            for i in xrange(5):
+                for j in xrange(i + 1):
+                    if c % 3 != 0: g[i, j] = c
+                    c = c + 1
+
+            result = g.get_degree_anomalies()
+            self.assertEqual(result.tolist(), [-2.5, 1.6, -0.6666666666666665, -1.0, 0.5])
+            result = g.get_weight_anomalies()
+            self.assertEqual(result.tolist(), [-34.90909090909091,  -9.119999999999997,
+                                               -7.0588235294117645, -5.392857142857146,
+                                               18.395833333333332])
             del g
 
         def test_merge_nodes(self):

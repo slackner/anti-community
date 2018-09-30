@@ -683,6 +683,71 @@ double *graph_in_weights(const struct graph *g)
     return weight;
 }
 
+double *graph_degree_anomalies(const struct graph *g)
+{
+    struct link *link;
+    double *result;
+    uint32_t i;
+
+    assert(!(g->flags & GRAPH_FLAGS_DIRECTED));
+
+    if (!(result = xmalloc(sizeof(*result) * g->num_nodes)))
+        return NULL;
+
+    for (i = 0; i < g->num_nodes; i++)
+    {
+        uint64_t value = 0;
+        uint32_t local = 0;
+
+        GRAPH_FOR_EACH_LINK(&g->nodes[i], link)
+        {
+            struct adjacency *adj = &g->nodes[link->index];
+            value += adj->num_links;
+            local++;
+        }
+
+        if (local) result[i] = local - (double)value / local;
+        else result[i] = 0.0;
+    }
+
+    return result;
+}
+
+double *graph_weight_anomalies(const struct graph *g)
+{
+    struct link *link;
+    double *weight;
+    double *result;
+    uint32_t i;
+
+    assert(!(g->flags & GRAPH_FLAGS_DIRECTED));
+
+    if (!(weight = graph_out_weights(g)))
+        return NULL;
+
+    if (!(result = xmalloc(sizeof(*result) * g->num_nodes)))
+    {
+        free(weight);
+        return NULL;
+    }
+
+    for (i = 0; i < g->num_nodes; i++)
+    {
+        double value = 0;
+
+        GRAPH_FOR_EACH_LINK(&g->nodes[i], link)
+        {
+            value += link->weight * weight[link->index];
+        }
+
+        if (weight[i] != 0.0) result[i] = weight[i] - value / weight[i];
+        else result[i] = 0.0;
+    }
+
+    free(weight);
+    return result;
+}
+
 struct adjacency *sort_adjacency(struct adjacency *adj)
 {
     if (adj->ops != &adjacency_ops_sorted)
