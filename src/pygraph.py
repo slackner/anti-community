@@ -477,51 +477,51 @@ class Graph(object):
     def sum_weights(self):
         return lib.graph_sum_weights(self.obj)
 
-    def get_out_degree(self, index):
+    def out_degree(self, index):
         return lib.graph_out_degree(self.obj, index)
 
-    def get_out_degrees(self):
+    def out_degrees(self):
         degrees_p = lib.graph_out_degrees(self.obj)
         degrees = npc.as_array(degrees_p, shape=(self.num_nodes,)).copy()
         libc.free(degrees_p)
         return degrees
 
-    def get_out_edges(self, index, ret_indices=True, ret_weights=True):
-        max_links = self.get_out_degree(index)
+    def out_edges(self, index, ret_indices=True, ret_weights=True):
+        max_links = self.out_degree(index)
         indices = np.empty(shape=(max_links,), dtype=np.uint32, order='C') if ret_indices else None
         weights = np.empty(shape=(max_links,), dtype=np.float32, order='C') if ret_weights else None
         num_links = lib.graph_out_edges(self.obj, index, indices, weights, max_links)
         assert num_links == max_links
         return indices, weights
 
-    def get_in_degree(self, index):
+    def in_degree(self, index):
         return lib.graph_in_degree(self.obj, index)
 
-    def get_in_degrees(self):
+    def in_degrees(self):
         degrees_p = lib.graph_in_degrees(self.obj)
         degrees = npc.as_array(degrees_p, shape=(self.num_nodes,)).copy()
         libc.free(degrees_p)
         return degrees
 
-    def get_out_weights(self):
+    def out_weights(self):
         weights_p = lib.graph_out_weights(self.obj)
         weights = npc.as_array(weights_p, shape=(self.num_nodes,)).copy()
         libc.free(weights_p)
         return weights
 
-    def get_in_weights(self):
+    def in_weights(self):
         weights_p = lib.graph_in_weights(self.obj)
         weights = npc.as_array(weights_p, shape=(self.num_nodes,)).copy()
         libc.free(weights_p)
         return weights
 
-    def get_degree_anomalies(self):
+    def degree_anomalies(self):
         results_p = lib.graph_degree_anomalies(self.obj)
         results = npc.as_array(results_p, shape=(self.num_nodes,)).copy()
         libc.free(results_p)
         return results
 
-    def get_weight_anomalies(self):
+    def weight_anomalies(self):
         results_p = lib.graph_weight_anomalies(self.obj)
         results = npc.as_array(results_p, shape=(self.num_nodes,)).copy()
         libc.free(results_p)
@@ -555,28 +555,28 @@ class Graph(object):
         lib.graph_bfs(self.obj, start, 1, c_bfs_callback_p(wrapper), None)
         return result
 
-    def get_distance_count(self, start, end):
+    def distance_count(self, start, end):
         return lib.graph_get_distance_count(self.obj, start, end)
 
-    def get_distance_weight(self, start, end):
+    def distance_weight(self, start, end):
         return lib.graph_get_distance_weight(self.obj, start, end)
 
-    def get_all_distances_count(self, start, max_count=0xffffffff):
+    def all_distances_count(self, start, max_count=0xffffffff):
         counts_p = lib.graph_get_all_distances_count(self.obj, start, max_count)
         count = npc.as_array(counts_p, shape=(self.num_nodes,)).copy()
         libc.free(counts_p)
         return count
 
-    def get_all_distances_weight(self, start, max_weight=np.inf):
+    def all_distances_weight(self, start, max_weight=np.inf):
         weights_p = lib.graph_get_all_distances_weight(self.obj, start, max_weight)
         weights = npc.as_array(weights_p, shape=(self.num_nodes,)).copy()
         libc.free(weights_p)
         return weights
 
-    def get_all_distances_graph(self, use_weights=False):
+    def all_distances_graph(self, use_weights=False):
         return Graph(obj=lib.graph_get_all_distances_graph(self.obj, use_weights))
 
-    def get_connected_components(self):
+    def connected_components(self):
         components_p = lib.graph_get_connected_components(self.obj)
         components = npc.as_array(components_p, shape=(self.num_nodes,)).copy()
         libc.free(components_p)
@@ -866,19 +866,19 @@ if __name__ == '__main__':
             self.assertEqual(g.edges()[0].tolist(), [[0, 1], [0, 3], [0, 4], [1, 2],
                                                      [1, 4], [2, 3], [2, 5], [3, 4],
                                                      [5, 6], [5, 7], [5, 8], [6, 7], [7, 8]])
-            indices, weights = g.get_out_edges(0)
+            indices, weights = g.out_edges(0)
             self.assertEqual(indices.tolist(), [1, 3, 4])
             self.assertEqual(weights.tolist(), [1.0, 1.0, 1.0])
-            indices, _ = g.get_out_edges(0, ret_weights=False)
+            indices, _ = g.out_edges(0, ret_weights=False)
             self.assertEqual(indices.tolist(), [1, 3, 4])
-            _, weights = g.get_out_edges(0, ret_indices=False)
+            _, weights = g.out_edges(0, ret_indices=False)
             self.assertEqual(weights.tolist(), [1.0, 1.0, 1.0])
 
             g = g.copy()
             self.assertEqual(g.edges()[0].tolist(), [[0, 1], [0, 3], [0, 4], [1, 2],
                                                      [1, 4], [2, 3], [2, 5], [3, 4],
                                                      [5, 6], [5, 7], [5, 8], [6, 7], [7, 8]])
-            indices, weights = g.get_out_edges(0)
+            indices, weights = g.out_edges(0)
             self.assertEqual(indices.tolist(), [1, 3, 4])
             self.assertEqual(weights.tolist(), [1.0, 1.0, 1.0])
             del g
@@ -1053,7 +1053,7 @@ if __name__ == '__main__':
             self.assertEqual(g[0, 1], 2.0)
             self.assertEqual(g[1, 0], 3.0)
             self.assertEqual(g[1, 1], 6.0)
-            indices, weights = g.get_out_edges(0)
+            indices, weights = g.out_edges(0)
             self.assertEqual(indices.tolist(), [0, 1])
             self.assertEqual(weights.tolist(), [7.0, 2.0])
             del g
@@ -1312,35 +1312,35 @@ if __name__ == '__main__':
             self.assertEqual(indices.tolist(), [[0, 1], [1, 2], [2, 3], [2, 4], [3, 4]])
             self.assertEqual(weights.tolist(), [1.0, 1.0, 1.0, 1.5, 1.5])
 
-            value = g.get_distance_count(100, 0)
+            value = g.distance_count(100, 0)
             self.assertEqual(value, 0xffffffff)
-            value = g.get_distance_weight(100, 0)
+            value = g.distance_weight(100, 0)
             self.assertEqual(value, np.inf)
 
-            value = g.get_distance_count(0, 0)
+            value = g.distance_count(0, 0)
             self.assertEqual(value, 0)
-            value = g.get_distance_weight(0, 0)
+            value = g.distance_weight(0, 0)
             self.assertEqual(value, 0.0)
 
-            value = g.get_distance_count(0, 4)
+            value = g.distance_count(0, 4)
             self.assertEqual(value, 3)
-            value = g.get_distance_weight(0, 4)
+            value = g.distance_weight(0, 4)
             self.assertEqual(value, 3.5)
 
-            counts = g.get_all_distances_count(0)
+            counts = g.all_distances_count(0)
             self.assertEqual(counts.tolist(), [0, 1, 2, 3, 3])
-            counts = g.get_all_distances_count(0, max_count=2)
+            counts = g.all_distances_count(0, max_count=2)
             self.assertEqual(counts.tolist(), [0, 1, 2, 0xffffffff, 0xffffffff])
 
-            counts = g.get_all_distances_count(100)
+            counts = g.all_distances_count(100)
             self.assertEqual(counts[0], 0xffffffff)
 
-            weights = g.get_all_distances_weight(0)
+            weights = g.all_distances_weight(0)
             self.assertEqual(weights.tolist(), [0.0, 1.0, 2.0, 3.0, 3.5])
-            weights = g.get_all_distances_weight(0, max_weight=2.0)
+            weights = g.all_distances_weight(0, max_weight=2.0)
             self.assertEqual(weights.tolist(), [0.0, 1.0, 2.0, np.inf, np.inf])
 
-            weights = g.get_all_distances_weight(100)
+            weights = g.all_distances_weight(100)
             self.assertEqual(weights[0], np.inf)
 
             results = g.bfs_count(0, max_count=2)
@@ -1357,13 +1357,13 @@ if __name__ == '__main__':
             self.assertEqual(results, [(0.0, 0, 0xffffffff, 0), (1.0, 1, 0, 1),
                                        (2.0, 2, 1, 2), (3.0, 3, 2, 3), (3.5, 3, 2, 4)])
 
-            distances = g.get_all_distances_graph(use_weights=False)
+            distances = g.all_distances_graph(use_weights=False)
             indices, weights = distances.edges()
             self.assertEqual(indices.tolist(), [[0, 1], [0, 2], [0, 3], [0, 4], [1, 2], [1, 3], [1, 4], [2, 3], [2, 4], [3, 4]])
             self.assertEqual(weights.tolist(), [1.0, 2.0, 3.0, 3.0, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0])
             del distances
 
-            distances = g.get_all_distances_graph(use_weights=True)
+            distances = g.all_distances_graph(use_weights=True)
             indices, weights = distances.edges()
             self.assertEqual(indices.tolist(), [[0, 1], [0, 2], [0, 3], [0, 4], [1, 2], [1, 3], [1, 4], [2, 3], [2, 4], [3, 4]])
             self.assertEqual(weights.tolist(), [1.0, 2.0, 3.0, 3.5, 1.0, 2.0, 2.5, 1.0, 1.5, 1.5])
@@ -1373,7 +1373,7 @@ if __name__ == '__main__':
 
         def test_connected_components(self):
             g = Graph.load_graph("data/example-adjnoun.graph")
-            components = g.get_connected_components()
+            components = g.connected_components()
             self.assertEqual(len(np.unique(components)), 1)
             del g
 
@@ -1385,25 +1385,25 @@ if __name__ == '__main__':
 
             self.assertEqual(g.sum_weights(), 6.0)
 
-            degrees = g.get_out_degrees()
+            degrees = g.out_degrees()
             self.assertEqual(degrees.tolist(), [2, 1])
-            self.assertEqual([g.get_out_degree(i) for i in xrange(g.num_nodes)], [2, 1])
-            weights = g.get_out_weights()
+            self.assertEqual([g.out_degree(i) for i in xrange(g.num_nodes)], [2, 1])
+            weights = g.out_weights()
             self.assertEqual(weights.tolist(), [3.0, 3.0])
 
-            degrees = g.get_in_degrees()
+            degrees = g.in_degrees()
             self.assertEqual(degrees.tolist(), [2, 1])
-            self.assertEqual([g.get_in_degree(i) for i in xrange(g.num_nodes)], [2, 1])
-            weights = g.get_in_weights()
+            self.assertEqual([g.in_degree(i) for i in xrange(g.num_nodes)], [2, 1])
+            weights = g.in_weights()
             self.assertEqual(weights.tolist(), [4.0, 2.0])
             del g
 
         def test_degree_anomalies(self):
             g = Graph(5, directed=False)
 
-            result = g.get_degree_anomalies()
+            result = g.degree_anomalies()
             self.assertEqual(result.tolist(), [0.0, 0.0, 0.0, 0.0, 0.0])
-            result = g.get_weight_anomalies()
+            result = g.weight_anomalies()
             self.assertEqual(result.tolist(), [0.0, 0.0, 0.0, 0.0, 0.0])
 
             c = 0
@@ -1412,9 +1412,9 @@ if __name__ == '__main__':
                     if c % 3 != 0: g[i, j] = c
                     c = c + 1
 
-            result = g.get_degree_anomalies()
+            result = g.degree_anomalies()
             self.assertEqual(result.tolist(), [-2.5, 1.6, -0.6666666666666665, -1.0, 0.5])
-            result = g.get_weight_anomalies()
+            result = g.weight_anomalies()
             self.assertEqual(result.tolist(), [-34.90909090909091,  -9.119999999999997,
                                                -7.0588235294117645, -5.392857142857146,
                                                18.395833333333332])
