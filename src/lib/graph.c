@@ -408,7 +408,7 @@ float graph_get_edge(const struct graph *g, uint32_t start, uint32_t end)
     return 0.0;
 }
 
-uint64_t graph_get_edges(const struct graph *g, uint32_t *edges, float *weights, uint64_t max_edges)
+uint64_t graph_get_edges(const struct graph *g, uint32_t *indices, float *weights, uint64_t max_edges)
 {
     uint64_t count = 0;
     struct link *link;
@@ -418,10 +418,10 @@ uint64_t graph_get_edges(const struct graph *g, uint32_t *edges, float *weights,
     {
         if (!(g->flags & GRAPH_FLAGS_DIRECTED) && link->index < i) continue;
         if (count++ >= max_edges) continue;
-        if (edges)
+        if (indices)
         {
-            *edges++ = i;
-            *edges++ = link->index;
+            *indices++ = i;
+            *indices++ = link->index;
         }
         if (weights)
         {
@@ -456,12 +456,12 @@ void graph_set_edge(struct graph *g, uint32_t start, uint32_t end, float weight)
     if ((link = _get_link(&g->nodes[end], start, 1))) link->weight = weight;
 }
 
-void graph_set_edges(struct graph *g, uint32_t *edges, float *weights, uint64_t num_edges)
+void graph_set_edges(struct graph *g, uint32_t *indices, float *weights, uint64_t num_edges)
 {
     while (num_edges--)
     {
-        graph_set_edge(g, edges[0], edges[1], weights[0]);
-        edges += 2;
+        graph_set_edge(g, indices[0], indices[1], weights[0]);
+        indices += 2;
         weights++;
     }
 }
@@ -475,12 +475,12 @@ void graph_add_edge(struct graph *g, uint32_t start, uint32_t end, float weight)
     if ((link = _get_link(&g->nodes[end], start, 1))) link->weight += weight;
 }
 
-void graph_add_edges(struct graph *g, uint32_t *edges, float *weights, uint64_t num_edges)
+void graph_add_edges(struct graph *g, uint32_t *indices, float *weights, uint64_t num_edges)
 {
     while (num_edges--)
     {
-        graph_add_edge(g, edges[0], edges[1], weights[0]);
-        edges += 2;
+        graph_add_edge(g, indices[0], indices[1], weights[0]);
+        indices += 2;
         weights++;
     }
 }
@@ -494,12 +494,12 @@ void graph_min_edge(struct graph *g, uint32_t start, uint32_t end, float weight)
     if ((link = _get_link(&g->nodes[end], start, 1))) link->weight = MIN(link->weight, weight);
 }
 
-void graph_min_edges(struct graph *g, uint32_t *edges, float *weights, uint64_t num_edges)
+void graph_min_edges(struct graph *g, uint32_t *indices, float *weights, uint64_t num_edges)
 {
     while (num_edges--)
     {
-        graph_min_edge(g, edges[0], edges[1], weights[0]);
-        edges += 2;
+        graph_min_edge(g, indices[0], indices[1], weights[0]);
+        indices += 2;
         weights++;
     }
 }
@@ -513,12 +513,12 @@ void graph_max_edge(struct graph *g, uint32_t start, uint32_t end, float weight)
     if ((link = _get_link(&g->nodes[end], start, 1))) link->weight = MAX(link->weight, weight);
 }
 
-void graph_max_edges(struct graph *g, uint32_t *edges, float *weights, uint64_t num_edges)
+void graph_max_edges(struct graph *g, uint32_t *indices, float *weights, uint64_t num_edges)
 {
     while (num_edges--)
     {
-        graph_max_edge(g, edges[0], edges[1], weights[0]);
-        edges += 2;
+        graph_max_edge(g, indices[0], indices[1], weights[0]);
+        indices += 2;
         weights++;
     }
 }
@@ -532,12 +532,12 @@ void graph_del_edge(struct graph *g, uint32_t start, uint32_t end)
     if ((link = _get_link(&g->nodes[end], start, 0))) _del_link(&g->nodes[end], link);
 }
 
-void graph_del_edges(struct graph *g, uint32_t *edges, uint64_t num_edges)
+void graph_del_edges(struct graph *g, uint32_t *indices, uint64_t num_edges)
 {
     while (num_edges--)
     {
-        graph_del_edge(g, edges[0], edges[1]);
-        edges += 2;
+        graph_del_edge(g, indices[0], indices[1]);
+        indices += 2;
     }
 }
 
@@ -633,7 +633,7 @@ uint32_t *graph_out_degrees(const struct graph *g)
     return degree;
 }
 
-uint32_t graph_out_edges(const struct graph *g, uint32_t index, uint32_t *edges, float *weights, uint32_t max_edges)
+uint32_t graph_out_edges(const struct graph *g, uint32_t index, uint32_t *indices, float *weights, uint32_t max_edges)
 {
     uint32_t count = 0;
     struct link *link;
@@ -643,7 +643,7 @@ uint32_t graph_out_edges(const struct graph *g, uint32_t index, uint32_t *edges,
     GRAPH_FOR_EACH_LINK(&g->nodes[index], link)
     {
         if (count++ >= max_edges) continue;
-        if (edges) *edges++ = link->index;
+        if (indices) *indices++ = link->index;
         if (weights) *weights++ = link->weight;
     }
 

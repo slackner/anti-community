@@ -299,23 +299,23 @@ void free_graph(struct graph *g);
 int graph_has_edge(const struct graph *g, uint32_t start, uint32_t end);
 /* get weight associated with an edge */
 float graph_get_edge(const struct graph *g, uint32_t start, uint32_t end);
-uint64_t graph_get_edges(const struct graph *g, uint32_t *edges, float *weights, uint64_t max_edges);
+uint64_t graph_get_edges(const struct graph *g, uint32_t *indices, float *weights, uint64_t max_edges);
 void graph_get_weights(const struct graph *g, float *weights);
 /* set edges to a given weight */
 void graph_set_edge(struct graph *g, uint32_t start, uint32_t end, float weight);
-void graph_set_edges(struct graph *g, uint32_t *edges, float *weights, uint64_t num_edges);
+void graph_set_edges(struct graph *g, uint32_t *indices, float *weights, uint64_t num_edges);
 /* add weight to a given edge */
 void graph_add_edge(struct graph *g, uint32_t start, uint32_t end, float weight);
-void graph_add_edges(struct graph *g, uint32_t *edges, float *weights, uint64_t num_edges);
+void graph_add_edges(struct graph *g, uint32_t *indices, float *weights, uint64_t num_edges);
 /* add weight to minimum of current edge and given value */
 void graph_min_edge(struct graph *g, uint32_t start, uint32_t end, float weight);
-void graph_min_edges(struct graph *g, uint32_t *edges, float *weights, uint64_t num_edges);
+void graph_min_edges(struct graph *g, uint32_t *indices, float *weights, uint64_t num_edges);
 /* set weight to maximum of current edge and given value */
 void graph_max_edge(struct graph *g, uint32_t start, uint32_t end, float weight);
-void graph_max_edges(struct graph *g, uint32_t *edges, float *weights, uint64_t num_edges);
+void graph_max_edges(struct graph *g, uint32_t *indices, float *weights, uint64_t num_edges);
 /* delete edge from a graph */
 void graph_del_edge(struct graph *g, uint32_t start, uint32_t end);
-void graph_del_edges(struct graph *g, uint32_t *edges, uint64_t num_edges);
+void graph_del_edges(struct graph *g, uint32_t *indices, uint64_t num_edges);
 
 /* merge two nodes in a graph */
 void graph_merge_nodes_add(struct graph *g, uint32_t index0, uint32_t index1);
@@ -338,7 +338,7 @@ double graph_sum_weights(const struct graph *g);
 /* compute out-degrees for vertices of a graph - COMPLEXITY: O(n) */
 uint32_t graph_out_degree(const struct graph *g, uint32_t index);
 uint32_t *graph_out_degrees(const struct graph *g);
-uint32_t graph_out_edges(const struct graph *g, uint32_t index, uint32_t *edges, float *weights, uint32_t max_edges);
+uint32_t graph_out_edges(const struct graph *g, uint32_t index, uint32_t *indices, float *weights, uint32_t max_edges);
 /* compute in-degrees for vertices of a graph - COMPLEXITY: O(m) */
 uint32_t graph_in_degree(const struct graph *g, uint32_t index);
 uint32_t *graph_in_degrees(const struct graph *g);

@@ -376,28 +376,28 @@ class Graph(object):
         start, end = pos
         lib.graph_set_edge(self.obj, start, end, value)
 
-    def set_edges(self, edges, weights):
-        if len(edges.shape) != 2 or edges.shape[1] != 2:
-            raise ValueError("edges array does not have correct dimensions")
+    def set_edges(self, indices, weights):
+        if len(indices.shape) != 2 or indices.shape[1] != 2:
+            raise ValueError("indices array does not have correct dimensions")
         if len(weights.shape) != 1:
             raise ValueError("weights array does not have correct dimensions")
-        if edges.shape[0] != weights.shape[0]:
-            raise ValueError("edges/weights arrays have different length")
+        if indices.shape[0] != weights.shape[0]:
+            raise ValueError("indices/weights arrays have different length")
 
-        edges = np.asarray(edges, dtype=np.uint32)
+        indices = np.asarray(indices, dtype=np.uint32)
         weights = np.asarray(weights, dtype=np.float32)
-        lib.graph_set_edges(self.obj, edges, weights, edges.shape[0])
+        lib.graph_set_edges(self.obj, indices, weights, indices.shape[0])
 
     def __delitem__(self, pos):
         start, end = pos
         lib.graph_del_edge(self.obj, start, end)
 
-    def del_edges(self, edges):
-        if len(edges.shape) != 2 or edges.shape[1] != 2:
-            raise ValueError("edges array does not have correct dimensions")
+    def del_edges(self, indices):
+        if len(indices.shape) != 2 or indices.shape[1] != 2:
+            raise ValueError("indices array does not have correct dimensions")
 
-        edges = np.asarray(edges, dtype=np.uint32)
-        lib.graph_del_edges(self.obj, edges, edges.shape[0])
+        indices = np.asarray(indices, dtype=np.uint32)
+        lib.graph_del_edges(self.obj, indices, indices.shape[0])
 
     def has_edge(self, pos):
         start, end = pos
@@ -407,41 +407,41 @@ class Graph(object):
         start, end = pos
         lib.graph_add_edge(self.obj, start, end, value)
 
-    def add_edges(self, edges, weights):
-        if len(edges.shape) != 2 or edges.shape[1] != 2:
-            raise ValueError("edges array does not have correct dimensions")
+    def add_edges(self, indices, weights):
+        if len(indices.shape) != 2 or indices.shape[1] != 2:
+            raise ValueError("indices array does not have correct dimensions")
         if len(weights.shape) != 1:
             raise ValueError("weights array does not have correct dimensions")
-        if edges.shape[0] != weights.shape[0]:
-            raise ValueError("edges/weights arrays have different length")
+        if indices.shape[0] != weights.shape[0]:
+            raise ValueError("indices/weights arrays have different length")
 
-        edges = np.asarray(edges, dtype=np.uint32)
+        indices = np.asarray(indices, dtype=np.uint32)
         weights = np.asarray(weights, dtype=np.float32)
-        lib.graph_add_edges(self.obj, edges, weights, edges.shape[0])
+        lib.graph_add_edges(self.obj, indices, weights, indices.shape[0])
 
-    def min_edges(self, edges, weights):
-        if len(edges.shape) != 2 or edges.shape[1] != 2:
-            raise ValueError("edges array does not have correct dimensions")
+    def min_edges(self, indices, weights):
+        if len(indices.shape) != 2 or indices.shape[1] != 2:
+            raise ValueError("indices array does not have correct dimensions")
         if len(weights.shape) != 1:
             raise ValueError("weights array does not have correct dimensions")
-        if edges.shape[0] != weights.shape[0]:
-            raise ValueError("edges/weights arrays have different length")
+        if indices.shape[0] != weights.shape[0]:
+            raise ValueError("indices/weights arrays have different length")
 
-        edges = np.asarray(edges, dtype=np.uint32)
+        indices = np.asarray(indices, dtype=np.uint32)
         weights = np.asarray(weights, dtype=np.float32)
-        lib.graph_min_edges(self.obj, edges, weights, edges.shape[0])
+        lib.graph_min_edges(self.obj, indices, weights, indices.shape[0])
 
-    def max_edges(self, edges, weights):
-        if len(edges.shape) != 2 or edges.shape[1] != 2:
-            raise ValueError("edges array does not have correct dimensions")
+    def max_edges(self, indices, weights):
+        if len(indices.shape) != 2 or indices.shape[1] != 2:
+            raise ValueError("indices array does not have correct dimensions")
         if len(weights.shape) != 1:
             raise ValueError("weights array does not have correct dimensions")
-        if edges.shape[0] != weights.shape[0]:
-            raise ValueError("edges/weights arrays have different length")
+        if indices.shape[0] != weights.shape[0]:
+            raise ValueError("indices/weights arrays have different length")
 
-        edges = np.asarray(edges, dtype=np.uint32)
+        indices = np.asarray(indices, dtype=np.uint32)
         weights = np.asarray(weights, dtype=np.float32)
-        lib.graph_max_edges(self.obj, edges, weights, edges.shape[0])
+        lib.graph_max_edges(self.obj, indices, weights, indices.shape[0])
 
     def edges(self, ret_indices=True, ret_weights=True):
         max_links = self.count_links()
@@ -1568,30 +1568,30 @@ if __name__ == '__main__':
 
         def test_batch(self):
             g = Graph(num_nodes=3, directed=True)
-            test_edges = np.array([[0, 1], [1, 2], [2, 0], [3, 3]])
+            test_indices = np.array([[0, 1], [1, 2], [2, 0], [3, 3]])
             test_weights = np.array([1.0, 2.0, 3.0, 4.0])
-            g.add_edges(test_edges, test_weights)
+            g.add_edges(test_indices, test_weights)
             indices, weights = g.edges()
             self.assertEqual(indices.tolist(), [[0, 1], [1, 2], [2, 0]])
             self.assertEqual(weights.tolist(), [1.0, 2.0, 3.0])
-            g.add_edges(test_edges, test_weights)
+            g.add_edges(test_indices, test_weights)
             indices, weights = g.edges()
             self.assertEqual(indices.tolist(), [[0, 1], [1, 2], [2, 0]])
             self.assertEqual(weights.tolist(), [2.0, 4.0, 6.0])
-            g.set_edges(test_edges, test_weights)
+            g.set_edges(test_indices, test_weights)
             indices, weights = g.edges()
             self.assertEqual(indices.tolist(), [[0, 1], [1, 2], [2, 0]])
             self.assertEqual(weights.tolist(), [1.0, 2.0, 3.0])
-            g.min_edges(test_edges, np.array([2.0, 2.0, 2.0, 2.0]))
+            g.min_edges(test_indices, np.array([2.0, 2.0, 2.0, 2.0]))
             indices, weights = g.edges()
             self.assertEqual(indices.tolist(), [[0, 1], [1, 2], [2, 0]])
             self.assertEqual(weights.tolist(), [1.0, 2.0, 2.0])
-            g.set_edges(test_edges, test_weights)
-            g.max_edges(test_edges, np.array([2.0, 2.0, 2.0, 2.0]))
+            g.set_edges(test_indices, test_weights)
+            g.max_edges(test_indices, np.array([2.0, 2.0, 2.0, 2.0]))
             indices, weights = g.edges()
             self.assertEqual(indices.tolist(), [[0, 1], [1, 2], [2, 0]])
             self.assertEqual(weights.tolist(), [2.0, 2.0, 3.0])
-            g.del_edges(test_edges)
+            g.del_edges(test_indices)
             self.assertEqual(g.edges()[0].tolist(), [])
             del g
 
