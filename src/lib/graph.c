@@ -633,6 +633,23 @@ uint32_t *graph_out_degrees(const struct graph *g)
     return degree;
 }
 
+uint32_t graph_out_edges(const struct graph *g, uint32_t index, uint32_t *edges, float *weights, uint32_t max_edges)
+{
+    uint32_t count = 0;
+    struct link *link;
+
+    if (index >= g->num_nodes) return 0;
+
+    GRAPH_FOR_EACH_LINK(&g->nodes[index], link)
+    {
+        if (count++ >= max_edges) continue;
+        if (edges) *edges++ = link->index;
+        if (weights) *weights++ = link->weight;
+    }
+
+    return count;
+}
+
 uint32_t graph_in_degree(const struct graph *g, uint32_t index)
 {
     uint32_t i, degree = 0;

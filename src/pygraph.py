@@ -134,6 +134,9 @@ lib.graph_out_degree.restype = c_uint
 lib.graph_out_degrees.argtypes = (c_graph_p,)
 lib.graph_out_degrees.restype = POINTER(c_uint)
 
+lib.graph_out_edges.argtypes = (c_graph_p, c_uint, or_null(npc.ndpointer(dtype=np.uint32)), or_null(npc.ndpointer(dtype=np.float32)), c_uint)
+lib.graph_out_edges.restype = c_uint
+
 lib.graph_in_degree.argtypes = (c_graph_p, c_uint)
 lib.graph_in_degree.restype = c_uint
 
@@ -489,6 +492,14 @@ class Graph(object):
         degrees = npc.as_array(degrees_p, shape=(self.num_nodes,)).copy()
         libc.free(degrees_p)
         return degrees
+
+    def get_out_edges(self, index, ret_indices=True, ret_weights=True):
+        max_links = self.get_out_degree(index)
+        indices = np.empty(shape=(max_links,), dtype=np.uint32, order='C') if ret_indices else None
+        weights = np.empty(shape=(max_links,), dtype=np.float32, order='C') if ret_weights else None
+        num_links = lib.graph_out_edges(self.obj, index, indices, weights, max_links)
+        assert num_links == max_links
+        return indices, weights
 
     def get_in_degree(self, index):
         return lib.graph_in_degree(self.obj, index)
@@ -862,10 +873,21 @@ if __name__ == '__main__':
             self.assertEqual(g.edges().tolist(), [[0, 1], [0, 3], [0, 4], [1, 2],
                                                   [1, 4], [2, 3], [2, 5], [3, 4],
                                                   [5, 6], [5, 7], [5, 8], [6, 7], [7, 8]])
+            indices, weights = g.get_out_edges(0)
+            self.assertEqual(indices.tolist(), [1, 3, 4])
+            self.assertEqual(weights.tolist(), [1.0, 1.0, 1.0])
+            indices, _ = g.get_out_edges(0, ret_weights=False)
+            self.assertEqual(indices.tolist(), [1, 3, 4])
+            _, weights = g.get_out_edges(0, ret_indices=False)
+            self.assertEqual(weights.tolist(), [1.0, 1.0, 1.0])
+
             g = g.copy()
             self.assertEqual(g.edges().tolist(), [[0, 1], [0, 3], [0, 4], [1, 2],
                                                   [1, 4], [2, 3], [2, 5], [3, 4],
                                                   [5, 6], [5, 7], [5, 8], [6, 7], [7, 8]])
+            indices, weights = g.get_out_edges(0)
+            self.assertEqual(indices.tolist(), [1, 3, 4])
+            self.assertEqual(weights.tolist(), [1.0, 1.0, 1.0])
             del g
 
             with self.assertRaises(IOError):
@@ -1035,6 +1057,9 @@ if __name__ == '__main__':
             self.assertEqual(g[0, 1], 2.0)
             self.assertEqual(g[1, 0], 3.0)
             self.assertEqual(g[1, 1], 6.0)
+            indices, weights = g.get_out_edges(0)
+            self.assertEqual(indices.tolist(), [0, 1])
+            self.assertEqual(weights.tolist(), [7.0, 2.0])
             del g
 
         def test_filter_labels(self):

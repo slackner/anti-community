@@ -338,6 +338,7 @@ double graph_sum_weights(const struct graph *g);
 /* compute out-degrees for vertices of a graph - COMPLEXITY: O(n) */
 uint32_t graph_out_degree(const struct graph *g, uint32_t index);
 uint32_t *graph_out_degrees(const struct graph *g);
+uint32_t graph_out_edges(const struct graph *g, uint32_t index, uint32_t *edges, float *weights, uint32_t max_edges);
 /* compute in-degrees for vertices of a graph - COMPLEXITY: O(m) */
 uint32_t graph_in_degree(const struct graph *g, uint32_t index);
 uint32_t *graph_in_degrees(const struct graph *g);
