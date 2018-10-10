@@ -443,20 +443,13 @@ class Graph(object):
         weights = np.asarray(weights, dtype=np.float32)
         lib.graph_max_edges(self.obj, edges, weights, edges.shape[0])
 
-    # FIXME: Would be better to unify edges() and weights().
-    def edges(self):
+    def edges(self, ret_indices=True, ret_weights=True):
         max_links = self.count_links()
-        edges = np.empty(shape=(max_links, 2), dtype=np.uint32, order='C')
-        num_links = lib.graph_get_edges(self.obj, edges, None, max_links)
+        indices = np.empty(shape=(max_links, 2), dtype=np.uint32, order='C') if ret_indices else None
+        weights = np.empty(shape=(max_links,), dtype=np.float32, order='C') if ret_weights else None
+        num_links = lib.graph_get_edges(self.obj, indices, weights, max_links)
         assert num_links == max_links
-        return edges
-
-    def weights(self):
-        max_links = self.count_links()
-        weights = np.empty(shape=(max_links,), dtype=np.float32, order='C')
-        num_links = lib.graph_get_edges(self.obj, None, weights, max_links)
-        assert num_links == max_links
-        return weights
+        return indices, weights
 
     def matrix(self):
         matrix = np.empty(shape=(self.num_nodes, self.num_nodes), dtype=np.float32, order='C')
@@ -870,9 +863,9 @@ if __name__ == '__main__':
             self.assertEqual(g.count_links(), 13)
             self.assertEqual(g.count_links(directed=True), 26)
             self.assertEqual(g.sum_weights(), 13.0)
-            self.assertEqual(g.edges().tolist(), [[0, 1], [0, 3], [0, 4], [1, 2],
-                                                  [1, 4], [2, 3], [2, 5], [3, 4],
-                                                  [5, 6], [5, 7], [5, 8], [6, 7], [7, 8]])
+            self.assertEqual(g.edges()[0].tolist(), [[0, 1], [0, 3], [0, 4], [1, 2],
+                                                     [1, 4], [2, 3], [2, 5], [3, 4],
+                                                     [5, 6], [5, 7], [5, 8], [6, 7], [7, 8]])
             indices, weights = g.get_out_edges(0)
             self.assertEqual(indices.tolist(), [1, 3, 4])
             self.assertEqual(weights.tolist(), [1.0, 1.0, 1.0])
@@ -882,9 +875,9 @@ if __name__ == '__main__':
             self.assertEqual(weights.tolist(), [1.0, 1.0, 1.0])
 
             g = g.copy()
-            self.assertEqual(g.edges().tolist(), [[0, 1], [0, 3], [0, 4], [1, 2],
-                                                  [1, 4], [2, 3], [2, 5], [3, 4],
-                                                  [5, 6], [5, 7], [5, 8], [6, 7], [7, 8]])
+            self.assertEqual(g.edges()[0].tolist(), [[0, 1], [0, 3], [0, 4], [1, 2],
+                                                     [1, 4], [2, 3], [2, 5], [3, 4],
+                                                     [5, 6], [5, 7], [5, 8], [6, 7], [7, 8]])
             indices, weights = g.get_out_edges(0)
             self.assertEqual(indices.tolist(), [1, 3, 4])
             self.assertEqual(weights.tolist(), [1.0, 1.0, 1.0])
@@ -941,25 +934,27 @@ if __name__ == '__main__':
 
             g = Graph.load_graph("data/example-trivial.graph")
             h = g.invert()
-            self.assertEqual(h.edges().tolist(), [[0, 0], [0, 2], [0, 5], [0, 6], [0, 7], [0, 8],
-                                                  [1, 1], [1, 3], [1, 5], [1, 6], [1, 7], [1, 8],
-                                                  [2, 2], [2, 4], [2, 6], [2, 7], [2, 8], [3, 3],
-                                                  [3, 5], [3, 6], [3, 7], [3, 8], [4, 4], [4, 5],
-                                                  [4, 6], [4, 7], [4, 8], [5, 5], [6, 6], [6, 8],
-                                                  [7, 7], [8, 8]])
-            self.assertEqual(h.weights().tolist(), [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
-                                                    1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
-                                                    1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
-                                                    1.0, 1.0, 1.0, 1.0, 1.0])
+            indices, weights = h.edges()
+            self.assertEqual(indices.tolist(), [[0, 0], [0, 2], [0, 5], [0, 6], [0, 7], [0, 8],
+                                                [1, 1], [1, 3], [1, 5], [1, 6], [1, 7], [1, 8],
+                                                [2, 2], [2, 4], [2, 6], [2, 7], [2, 8], [3, 3],
+                                                [3, 5], [3, 6], [3, 7], [3, 8], [4, 4], [4, 5],
+                                                [4, 6], [4, 7], [4, 8], [5, 5], [6, 6], [6, 8],
+                                                [7, 7], [8, 8]])
+            self.assertEqual(weights.tolist(), [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+                                                1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+                                                1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+                                                1.0, 1.0, 1.0, 1.0, 1.0])
             del h
             h = g.invert(self_loops=False)
-            self.assertEqual(h.edges().tolist(), [[0, 2], [0, 5], [0, 6], [0, 7], [0, 8], [1, 3],
-                                                  [1, 5], [1, 6], [1, 7], [1, 8], [2, 4], [2, 6],
-                                                  [2, 7], [2, 8], [3, 5], [3, 6], [3, 7], [3, 8],
-                                                  [4, 5], [4, 6], [4, 7], [4, 8], [6, 8]])
-            self.assertEqual(h.weights().tolist(), [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
-                                                    1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
-                                                    1.0, 1.0, 1.0, 1.0, 1.0])
+            indices, weights = h.edges()
+            self.assertEqual(indices.tolist(), [[0, 2], [0, 5], [0, 6], [0, 7], [0, 8], [1, 3],
+                                                [1, 5], [1, 6], [1, 7], [1, 8], [2, 4], [2, 6],
+                                                [2, 7], [2, 8], [3, 5], [3, 6], [3, 7], [3, 8],
+                                                [4, 5], [4, 6], [4, 7], [4, 8], [6, 8]])
+            self.assertEqual(weights.tolist(), [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+                                                1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+                                                1.0, 1.0, 1.0, 1.0, 1.0])
             del g
             del h
 
@@ -1050,8 +1045,9 @@ if __name__ == '__main__':
             g[0, 0] = 1.0
             g[0, 1] = 2.0
             g[1, 0] = 3.0
-            self.assertEqual(g.edges().tolist(), [[0, 0], [0, 1], [1, 0]])
-            self.assertEqual(g.weights().tolist(), [1.0, 2.0, 3.0])
+            indices, weights = g.edges()
+            self.assertEqual(indices.tolist(), [[0, 0], [0, 1], [1, 0]])
+            self.assertEqual(weights.tolist(), [1.0, 2.0, 3.0])
             g = g.square()
             self.assertEqual(g[0, 0], 7.0)
             self.assertEqual(g[0, 1], 2.0)
@@ -1120,7 +1116,7 @@ if __name__ == '__main__':
             g[0, 1] = 2.0
             g[1, 0] = 3.0
             g[1, 1] = 4.0
-            self.assertEqual(g.weights().tolist(), [1.0, 2.0, 3.0, 4.0])
+            self.assertEqual(g.edges()[1].tolist(), [1.0, 2.0, 3.0, 4.0])
             del g
 
             g = Graph(num_nodes=2, directed=True)
@@ -1134,11 +1130,11 @@ if __name__ == '__main__':
             g[2, 0] = 7.0
             g[2, 1] = 8.0
             g[2, 2] = 9.0
-            self.assertEqual(g.weights().tolist(), [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0])
+            self.assertEqual(g.edges()[1].tolist(), [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0])
             g.resize(num_nodes=2)
-            self.assertEqual(g.weights().tolist(), [1.0, 2.0, 4.0, 5.0])
+            self.assertEqual(g.edges()[1].tolist(), [1.0, 2.0, 4.0, 5.0])
             g.resize(num_nodes=1)
-            self.assertEqual(g.weights().tolist(), [1.0])
+            self.assertEqual(g.edges()[1].tolist(), [1.0])
             g.resize(num_nodes=0)
             self.assertEqual(g.num_nodes, 0)
             del g
@@ -1222,8 +1218,9 @@ if __name__ == '__main__':
             indices1 = np.array([5, 5, 7, 7, 5, 7, 8, 8, 8])
             indices2 = np.array([0, 1, 1, 1, 0, 0, 1, 0, 1])
             g = intersection_matrix(indices1, indices2)
-            self.assertEqual(g.edges().tolist(), [[0, 0], [0, 1], [1, 0], [1, 1], [2, 0], [2, 1]])
-            self.assertEqual(g.weights().tolist(), [2.0, 1.0, 1.0, 2.0, 1.0, 2.0])
+            indices, weights = g.edges()
+            self.assertEqual(indices.tolist(), [[0, 0], [0, 1], [1, 0], [1, 1], [2, 0], [2, 1]])
+            self.assertEqual(weights.tolist(), [2.0, 1.0, 1.0, 2.0, 1.0, 2.0])
             del g
 
         def test_confusion_matrix(self):
@@ -1311,8 +1308,9 @@ if __name__ == '__main__':
             g[2, 3] = 1.0
             g[3, 4] = 1.5
             g[2, 4] = 1.5
-            self.assertEqual(g.edges().tolist(), [[0, 1], [1, 2], [2, 3], [2, 4], [3, 4]])
-            self.assertEqual(g.weights().tolist(), [1.0, 1.0, 1.0, 1.5, 1.5])
+            indices, weights = g.edges()
+            self.assertEqual(indices.tolist(), [[0, 1], [1, 2], [2, 3], [2, 4], [3, 4]])
+            self.assertEqual(weights.tolist(), [1.0, 1.0, 1.0, 1.5, 1.5])
 
             value = g.get_distance_count(100, 0)
             self.assertEqual(value, 0xffffffff)
@@ -1360,13 +1358,15 @@ if __name__ == '__main__':
                                        (2.0, 2, 1, 2), (3.0, 3, 2, 3), (3.5, 3, 2, 4)])
 
             distances = g.get_all_distances_graph(use_weights=False)
-            self.assertEqual(distances.edges().tolist(), [[0, 1], [0, 2], [0, 3], [0, 4], [1, 2], [1, 3], [1, 4], [2, 3], [2, 4], [3, 4]])
-            self.assertEqual(distances.weights().tolist(), [1.0, 2.0, 3.0, 3.0, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0])
+            indices, weights = distances.edges()
+            self.assertEqual(indices.tolist(), [[0, 1], [0, 2], [0, 3], [0, 4], [1, 2], [1, 3], [1, 4], [2, 3], [2, 4], [3, 4]])
+            self.assertEqual(weights.tolist(), [1.0, 2.0, 3.0, 3.0, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0])
             del distances
 
             distances = g.get_all_distances_graph(use_weights=True)
-            self.assertEqual(distances.edges().tolist(), [[0, 1], [0, 2], [0, 3], [0, 4], [1, 2], [1, 3], [1, 4], [2, 3], [2, 4], [3, 4]])
-            self.assertEqual(distances.weights().tolist(), [1.0, 2.0, 3.0, 3.5, 1.0, 2.0, 2.5, 1.0, 1.5, 1.5])
+            indices, weights = distances.edges()
+            self.assertEqual(indices.tolist(), [[0, 1], [0, 2], [0, 3], [0, 4], [1, 2], [1, 3], [1, 4], [2, 3], [2, 4], [3, 4]])
+            self.assertEqual(weights.tolist(), [1.0, 2.0, 3.0, 3.5, 1.0, 2.0, 2.5, 1.0, 1.5, 1.5])
             del distances
 
             del g
@@ -1568,26 +1568,31 @@ if __name__ == '__main__':
 
         def test_batch(self):
             g = Graph(num_nodes=3, directed=True)
-            edges = np.array([[0, 1], [1, 2], [2, 0], [3, 3]])
-            weights = np.array([1.0, 2.0, 3.0, 4.0])
-            g.add_edges(edges, weights)
-            self.assertEqual(g.edges().tolist(), [[0, 1], [1, 2], [2, 0]])
-            self.assertEqual(g.weights().tolist(), [1.0, 2.0, 3.0])
-            g.add_edges(edges, weights)
-            self.assertEqual(g.edges().tolist(), [[0, 1], [1, 2], [2, 0]])
-            self.assertEqual(g.weights().tolist(), [2.0, 4.0, 6.0])
-            g.set_edges(edges, weights)
-            self.assertEqual(g.edges().tolist(), [[0, 1], [1, 2], [2, 0]])
-            self.assertEqual(g.weights().tolist(), [1.0, 2.0, 3.0])
-            g.min_edges(edges, np.array([2.0, 2.0, 2.0, 2.0]))
-            self.assertEqual(g.edges().tolist(), [[0, 1], [1, 2], [2, 0]])
-            self.assertEqual(g.weights().tolist(), [1.0, 2.0, 2.0])
-            g.set_edges(edges, weights)
-            g.max_edges(edges, np.array([2.0, 2.0, 2.0, 2.0]))
-            self.assertEqual(g.edges().tolist(), [[0, 1], [1, 2], [2, 0]])
-            self.assertEqual(g.weights().tolist(), [2.0, 2.0, 3.0])
-            g.del_edges(edges)
-            self.assertEqual(g.edges().tolist(), [])
+            test_edges = np.array([[0, 1], [1, 2], [2, 0], [3, 3]])
+            test_weights = np.array([1.0, 2.0, 3.0, 4.0])
+            g.add_edges(test_edges, test_weights)
+            indices, weights = g.edges()
+            self.assertEqual(indices.tolist(), [[0, 1], [1, 2], [2, 0]])
+            self.assertEqual(weights.tolist(), [1.0, 2.0, 3.0])
+            g.add_edges(test_edges, test_weights)
+            indices, weights = g.edges()
+            self.assertEqual(indices.tolist(), [[0, 1], [1, 2], [2, 0]])
+            self.assertEqual(weights.tolist(), [2.0, 4.0, 6.0])
+            g.set_edges(test_edges, test_weights)
+            indices, weights = g.edges()
+            self.assertEqual(indices.tolist(), [[0, 1], [1, 2], [2, 0]])
+            self.assertEqual(weights.tolist(), [1.0, 2.0, 3.0])
+            g.min_edges(test_edges, np.array([2.0, 2.0, 2.0, 2.0]))
+            indices, weights = g.edges()
+            self.assertEqual(indices.tolist(), [[0, 1], [1, 2], [2, 0]])
+            self.assertEqual(weights.tolist(), [1.0, 2.0, 2.0])
+            g.set_edges(test_edges, test_weights)
+            g.max_edges(test_edges, np.array([2.0, 2.0, 2.0, 2.0]))
+            indices, weights = g.edges()
+            self.assertEqual(indices.tolist(), [[0, 1], [1, 2], [2, 0]])
+            self.assertEqual(weights.tolist(), [2.0, 2.0, 3.0])
+            g.del_edges(test_edges)
+            self.assertEqual(g.edges()[0].tolist(), [])
             del g
 
         def test_matrix(self):
