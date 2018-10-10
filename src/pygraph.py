@@ -128,8 +128,14 @@ lib.graph_count_links_directed.restype = c_uint64
 lib.graph_sum_weights.argtypes = (c_graph_p,)
 lib.graph_sum_weights.restype = c_double
 
+lib.graph_out_degree.argtypes = (c_graph_p, c_uint)
+lib.graph_out_degree.restype = c_uint
+
 lib.graph_out_degrees.argtypes = (c_graph_p,)
 lib.graph_out_degrees.restype = POINTER(c_uint)
+
+lib.graph_in_degree.argtypes = (c_graph_p, c_uint)
+lib.graph_in_degree.restype = c_uint
 
 lib.graph_in_degrees.argtypes = (c_graph_p,)
 lib.graph_in_degrees.restype = POINTER(c_uint)
@@ -475,11 +481,17 @@ class Graph(object):
     def sum_weights(self):
         return lib.graph_sum_weights(self.obj)
 
+    def get_out_degree(self, index):
+        return lib.graph_out_degree(self.obj, index)
+
     def get_out_degrees(self):
         degrees_p = lib.graph_out_degrees(self.obj)
         degrees = npc.as_array(degrees_p, shape=(self.num_nodes,)).copy()
         libc.free(degrees_p)
         return degrees
+
+    def get_in_degree(self, index):
+        return lib.graph_in_degree(self.obj, index)
 
     def get_in_degrees(self):
         degrees_p = lib.graph_in_degrees(self.obj)
@@ -1350,11 +1362,13 @@ if __name__ == '__main__':
 
             degrees = g.get_out_degrees()
             self.assertEqual(degrees.tolist(), [2, 1])
+            self.assertEqual([g.get_out_degree(i) for i in xrange(g.num_nodes)], [2, 1])
             weights = g.get_out_weights()
             self.assertEqual(weights.tolist(), [3.0, 3.0])
 
             degrees = g.get_in_degrees()
             self.assertEqual(degrees.tolist(), [2, 1])
+            self.assertEqual([g.get_in_degree(i) for i in xrange(g.num_nodes)], [2, 1])
             weights = g.get_in_weights()
             self.assertEqual(weights.tolist(), [4.0, 2.0])
             del g

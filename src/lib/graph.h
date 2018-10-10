@@ -336,8 +336,10 @@ uint64_t graph_count_links_diagonal(const struct graph *g);
 /* sum the weights of all edges in a graph - COMPLEXITY: O(m) */
 double graph_sum_weights(const struct graph *g);
 /* compute out-degrees for vertices of a graph - COMPLEXITY: O(n) */
+uint32_t graph_out_degree(const struct graph *g, uint32_t index);
 uint32_t *graph_out_degrees(const struct graph *g);
 /* compute in-degrees for vertices of a graph - COMPLEXITY: O(m) */
+uint32_t graph_in_degree(const struct graph *g, uint32_t index);
 uint32_t *graph_in_degrees(const struct graph *g);
 /* compute out-weight sums for vertices of a graph - COMPLEXITY: O(m) */
 double *graph_out_weights(const struct graph *g);

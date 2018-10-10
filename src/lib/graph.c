@@ -609,6 +609,16 @@ double graph_sum_weights(const struct graph *g)
     return sum;
 }
 
+uint32_t graph_out_degree(const struct graph *g, uint32_t index)
+{
+    struct adjacency *adj;
+
+    if (index >= g->num_nodes) return 0;
+
+    adj = &g->nodes[index];
+    return adj->num_links;
+}
+
 uint32_t *graph_out_degrees(const struct graph *g)
 {
     uint32_t *degree;
@@ -619,6 +629,18 @@ uint32_t *graph_out_degrees(const struct graph *g)
 
     for (i = 0; i < g->num_nodes; i++)
         degree[i] = g->nodes[i].num_links;
+
+    return degree;
+}
+
+uint32_t graph_in_degree(const struct graph *g, uint32_t index)
+{
+    uint32_t i, degree = 0;
+
+    if (index >= g->num_nodes) return 0;
+
+    for (i = 0; i < g->num_nodes; i++)
+        if (_get_link(&g->nodes[i], index, 0)) degree++;
 
     return degree;
 }
