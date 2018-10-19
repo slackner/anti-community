@@ -42,6 +42,9 @@
 #define UNLIKELY(x) __builtin_expect((x), 0)
 #define DECL_INTERNAL __attribute__((__visibility__("hidden")))
 
+void random_bytes(uint8_t *buffer, size_t length) DECL_INTERNAL;
+float random_float(void) DECL_INTERNAL;
+
 static inline struct link *_get_link(struct adjacency *adj, uint32_t end, int allocate)
 {
     return adj->ops->get(adj, end, allocate);

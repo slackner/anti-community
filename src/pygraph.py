@@ -69,6 +69,9 @@ lib.multiply_graph.restype = c_graph_p
 lib.square_graph.argtypes = (c_graph_p,)
 lib.square_graph.restype = c_graph_p
 
+lib.graph_power_iteration.argtypes = (c_graph_p, c_uint, or_null(POINTER(c_double)))
+lib.graph_power_iteration.restype = POINTER(c_double)
+
 lib.filter_graph_labels.argtypes = (c_graph_p, npc.ndpointer(dtype=np.uint32))
 lib.filter_graph_labels.restype = c_graph_p
 
@@ -344,6 +347,13 @@ class Graph(object):
 
     def square(self):
         return Graph(obj=lib.square_graph(self.obj))
+
+    def power_iteration(self, num_iterations=0):
+        eigenvalue = c_double()
+        vector_p = lib.graph_power_iteration(self.obj, num_iterations, eigenvalue)
+        vector = npc.as_array(vector_p, shape=(self.num_nodes,)).copy()
+        libc.free(vector_p)
+        return vector, eigenvalue.value
 
     def filter_labels(self, labels):
         if len(labels.shape) != 1 or labels.shape[0] != self.num_nodes:
@@ -1056,6 +1066,27 @@ if __name__ == '__main__':
             indices, weights = g.out_edges(0)
             self.assertEqual(indices.tolist(), [0, 1])
             self.assertEqual(weights.tolist(), [7.0, 2.0])
+            del g
+
+        def test_power_iteration(self):
+            g = Graph(num_nodes=2, directed=True)
+            g[0, 0] = 0.5
+            g[0, 1] = 0.5
+            g[1, 0] = 0.2
+            g[1, 1] = 0.8
+            v, e = g.power_iteration()
+            self.assertTrue((e - 1.0)**2 < 1e-10)
+            self.assertTrue(sum((v - np.array([1, 1]) / np.sqrt(2))**2) < 1e-10)
+            del g
+
+            g = Graph(num_nodes=2, directed=True)
+            g[0, 0] = -0.5
+            g[0, 1] = -0.5
+            g[1, 0] = -0.2
+            g[1, 1] = -0.8
+            v, e = g.power_iteration()
+            self.assertTrue((e + 1.0)**2 < 1e-10)
+            self.assertTrue(sum((v - np.array([1, 1]) / np.sqrt(2))**2) < 1e-10)
             del g
 
         def test_filter_labels(self):

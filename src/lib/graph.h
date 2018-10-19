@@ -270,6 +270,8 @@ struct graph *transpose_graph(const struct graph *g);
 struct graph *invert_graph(const struct graph *g, double max_weight, int self_loops);
 /* multiply graph with a constant */
 struct graph *multiply_graph_const(const struct graph *g, double constant);
+/* multiply graph with a vector */
+double *multiply_graph_vector(const struct graph *g, double *vector);
 /* multiply graphs elementwise */
 struct graph *multiply_graph_elementwise(const struct graph *g, const struct graph *h);
 /* Compute scalar product of two graphs */
@@ -278,6 +280,8 @@ double scalar_product_graph(const struct graph *g, const struct graph *h);
 struct graph *multiply_graph(const struct graph *g, const struct graph *h);
 /* compute the squared graph */
 struct graph *square_graph(const struct graph *g);
+/* compute eigenvector for largest eigenvalue using power iteration */
+double *graph_power_iteration(const struct graph *g, uint32_t num_iterations, double *eigenvalue_out);
 /* filter a graph */
 struct graph *filter_graph_labels(const struct graph *g, uint32_t *labels);
 struct graph *filter_graph_weights(const struct graph *g, float min, float max);

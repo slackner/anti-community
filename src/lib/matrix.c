@@ -26,6 +26,29 @@ struct graph *multiply_graph_const(const struct graph *g, double constant)
     return dst;
 }
 
+double *multiply_graph_vector(const struct graph *g, double *vector)
+{
+    struct link *link;
+    double *result;
+    double value;
+    uint32_t i;
+
+    if (!(result = xmalloc(sizeof(*result) * g->num_nodes)))
+        return NULL;
+
+    for (i = 0; i < g->num_nodes; i++)
+    {
+        value = 0.0;
+        GRAPH_FOR_EACH_LINK(&g->nodes[i], link)
+        {
+            value += link->weight * vector[link->index];
+        }
+        result[i] = value;
+    }
+
+    return result;
+}
+
 struct graph *multiply_graph_elementwise(const struct graph *g, const struct graph *h)
 {
     struct link *link1, *link2;
@@ -102,4 +125,49 @@ struct graph *multiply_graph(const struct graph *g, const struct graph *h)
 struct graph *square_graph(const struct graph *g)
 {
     return multiply_graph(g, g);
+}
+
+double *graph_power_iteration(const struct graph *g, uint32_t num_iterations, double *eigenvalue_out)
+{
+    double *vector;
+    double *temp;
+    double norm = 0.0;
+    uint32_t i, j;
+
+    if (!num_iterations)
+        num_iterations = 100;
+
+    if (!(vector = xmalloc(sizeof(*vector) * g->num_nodes)))
+        return NULL;
+
+    for (i = 0; i < g->num_nodes; i++)
+        vector[i] = random_float();
+
+    for (i = 0; i < num_iterations; i++)
+    {
+        temp = multiply_graph_vector(g, vector);
+        free(vector);
+        vector = temp;
+
+        norm = 0.0;
+        for (j = 0; j < g->num_nodes; j++)
+            norm += vector[j] * vector[j];
+
+        norm = sqrt(norm);
+        for (j = 0; j < g->num_nodes; j++)
+            vector[j] /= norm;
+    }
+
+    if (eigenvalue_out)
+    {
+        temp = multiply_graph_vector(g, vector);
+        norm = 0.0;
+        for (i = 0; i < g->num_nodes; i++)
+            norm += vector[i] * temp[i];
+        free(temp);
+
+        *eigenvalue_out = norm;
+    }
+
+    return vector;
 }
