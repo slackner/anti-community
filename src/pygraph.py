@@ -293,6 +293,9 @@ class Graph(object):
     def num_nodes(self):
         return self.obj.contents.num_nodes
 
+    def nodes(self):
+        return range(self.num_nodes)
+
     @property
     def flags(self):
         return self.obj.contents.flags
@@ -850,6 +853,7 @@ if __name__ == '__main__':
         def test_load_graph(self):
             g = Graph.load_graph("data/example-trivial.graph")
             self.assertEqual(g.num_nodes, 9)
+            self.assertEqual(g.nodes(), range(9))
             self.assertEqual(g.flags, 0)
             self.assertEqual(g.directed, False)
             self.assertEqual(g[0, 0], 0.0)
