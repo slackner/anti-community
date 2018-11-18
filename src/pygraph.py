@@ -576,7 +576,9 @@ class Graph(object):
 
     def all_distances_count(self, start, max_count=0xffffffff):
         counts_p = lib.graph_get_all_distances_count(self.obj, start, max_count)
-        count = npc.as_array(counts_p, shape=(self.num_nodes,)).copy()
+        count_orig = npc.as_array(counts_p, shape=(self.num_nodes,))
+        count = np.array(count_orig, copy=True, dtype=np.float)
+        count[count_orig == 0xffffffff] = np.inf
         libc.free(counts_p)
         return count
 
@@ -1363,12 +1365,12 @@ if __name__ == '__main__':
             self.assertEqual(value, 3.5)
 
             counts = g.all_distances_count(0)
-            self.assertEqual(counts.tolist(), [0, 1, 2, 3, 3])
+            self.assertEqual(counts.tolist(), [0.0, 1.0, 2.0, 3.0, 3.0])
             counts = g.all_distances_count(0, max_count=2)
-            self.assertEqual(counts.tolist(), [0, 1, 2, 0xffffffff, 0xffffffff])
+            self.assertEqual(counts.tolist(), [0.0, 1.0, 2.0, np.inf, np.inf])
 
             counts = g.all_distances_count(100)
-            self.assertEqual(counts[0], 0xffffffff)
+            self.assertEqual(counts[0], np.inf)
 
             weights = g.all_distances_weight(0)
             self.assertEqual(weights.tolist(), [0.0, 1.0, 2.0, 3.0, 3.5])
