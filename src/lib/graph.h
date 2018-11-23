@@ -274,6 +274,8 @@ struct graph *multiply_graph_const(const struct graph *g, double constant);
 double *multiply_graph_vector(const struct graph *g, double *vector);
 /* multiply graphs elementwise */
 struct graph *multiply_graph_elementwise(const struct graph *g, const struct graph *h);
+/* add graphs elementwise */
+struct graph *add_graph_elementwise(const struct graph *g, const struct graph *h);
 /* Compute scalar product of two graphs */
 double scalar_product_graph(const struct graph *g, const struct graph *h);
 /* compute the graph multiplication */

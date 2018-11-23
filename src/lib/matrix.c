@@ -73,6 +73,34 @@ struct graph *multiply_graph_elementwise(const struct graph *g, const struct gra
     return dst;
 }
 
+struct graph *add_graph_elementwise(const struct graph *g, const struct graph *h)
+{
+    struct link *link1, *link2;
+    struct graph *dst;
+    uint32_t i;
+
+    assert(g->num_nodes == h->num_nodes);
+
+    if (!(dst = alloc_graph(g->num_nodes, (g->flags | h->flags) & ~GRAPH_FLAGS_UNSORTED)))
+        return NULL;
+
+    for (i = 0; i < g->num_nodes; i++)
+    {
+        GRAPH_FOR_EACH_LINK2(&g->nodes[i], link1, &h->nodes[i], link2)
+        {
+            if (link1 && link2)
+                _set_edge(dst, i, link1->index, link1->weight + link2->weight);
+            else if (link1)
+                _set_edge(dst, i, link1->index, link1->weight);
+            else if (link2)
+                _set_edge(dst, i, link2->index, link2->weight);
+        }
+    }
+
+    compress_graph_inline(dst);
+    return dst;
+}
+
 double scalar_product_graph(const struct graph *g, const struct graph *h)
 {
     struct link *link1, *link2;

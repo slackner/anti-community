@@ -60,6 +60,9 @@ lib.multiply_graph_const.restype = c_graph_p
 lib.multiply_graph_elementwise.argtypes = (c_graph_p, c_graph_p)
 lib.multiply_graph_elementwise.restype = c_graph_p
 
+lib.add_graph_elementwise.argtypes = (c_graph_p, c_graph_p)
+lib.add_graph_elementwise.restype = c_graph_p
+
 lib.scalar_product_graph.argtypes = (c_graph_p, c_graph_p)
 lib.scalar_product_graph.restype = c_double
 
@@ -335,6 +338,12 @@ class Graph(object):
             raise ValueError("graphs have different number of nodes")
 
         return Graph(obj=lib.multiply_graph_elementwise(self.obj, other.obj))
+
+    def add_elementwise(self, other):
+        if self.num_nodes != other.num_nodes:
+            raise ValueError("graphs have different number of nodes")
+
+        return Graph(obj=lib.add_graph_elementwise(self.obj, other.obj))
 
     def scalar_product(self, other):
         if self.num_nodes != other.num_nodes:
