@@ -368,10 +368,11 @@ class Graph(object):
         return vector, eigenvalue.value
 
     def filter_labels(self, labels):
+        labels = np.asarray(labels, dtype=np.uint32)
+
         if len(labels.shape) != 1 or labels.shape[0] != self.num_nodes:
             raise ValueError("labels array does not have correct dimensions")
 
-        labels = np.asarray(labels, dtype=np.uint32)
         return Graph(obj=lib.filter_graph_labels(self.obj, labels))
 
     def filter_weights(self, min, max):
@@ -399,6 +400,11 @@ class Graph(object):
         lib.graph_set_edge(self.obj, start, end, value)
 
     def set_edges(self, indices, weights):
+        indices = np.asarray(indices, dtype=np.uint32)
+        weights = np.asarray(weights, dtype=np.float32)
+
+        if indices.size == 0 and weights.size == 0:
+            return # nothing to do for empty array
         if len(indices.shape) != 2 or indices.shape[1] != 2:
             raise ValueError("indices array does not have correct dimensions")
         if len(weights.shape) != 1:
@@ -406,8 +412,6 @@ class Graph(object):
         if indices.shape[0] != weights.shape[0]:
             raise ValueError("indices/weights arrays have different length")
 
-        indices = np.asarray(indices, dtype=np.uint32)
-        weights = np.asarray(weights, dtype=np.float32)
         lib.graph_set_edges(self.obj, indices, weights, indices.shape[0])
 
     def __delitem__(self, pos):
@@ -415,10 +419,13 @@ class Graph(object):
         lib.graph_del_edge(self.obj, start, end)
 
     def del_edges(self, indices):
+        indices = np.asarray(indices, dtype=np.uint32)
+
+        if indices.size == 0:
+            return # nothing to do for empty array
         if len(indices.shape) != 2 or indices.shape[1] != 2:
             raise ValueError("indices array does not have correct dimensions")
 
-        indices = np.asarray(indices, dtype=np.uint32)
         lib.graph_del_edges(self.obj, indices, indices.shape[0])
 
     def has_edge(self, pos):
@@ -430,6 +437,11 @@ class Graph(object):
         lib.graph_add_edge(self.obj, start, end, value)
 
     def add_edges(self, indices, weights):
+        indices = np.asarray(indices, dtype=np.uint32)
+        weights = np.asarray(weights, dtype=np.float32)
+
+        if indices.size == 0 and weights.size == 0:
+            return # nothing to do for empty array
         if len(indices.shape) != 2 or indices.shape[1] != 2:
             raise ValueError("indices array does not have correct dimensions")
         if len(weights.shape) != 1:
@@ -437,11 +449,14 @@ class Graph(object):
         if indices.shape[0] != weights.shape[0]:
             raise ValueError("indices/weights arrays have different length")
 
-        indices = np.asarray(indices, dtype=np.uint32)
-        weights = np.asarray(weights, dtype=np.float32)
         lib.graph_add_edges(self.obj, indices, weights, indices.shape[0])
 
     def min_edges(self, indices, weights):
+        indices = np.asarray(indices, dtype=np.uint32)
+        weights = np.asarray(weights, dtype=np.float32)
+
+        if indices.size == 0 and weights.size == 0:
+            return # nothing to do for empty array
         if len(indices.shape) != 2 or indices.shape[1] != 2:
             raise ValueError("indices array does not have correct dimensions")
         if len(weights.shape) != 1:
@@ -449,11 +464,14 @@ class Graph(object):
         if indices.shape[0] != weights.shape[0]:
             raise ValueError("indices/weights arrays have different length")
 
-        indices = np.asarray(indices, dtype=np.uint32)
-        weights = np.asarray(weights, dtype=np.float32)
         lib.graph_min_edges(self.obj, indices, weights, indices.shape[0])
 
     def max_edges(self, indices, weights):
+        indices = np.asarray(indices, dtype=np.uint32)
+        weights = np.asarray(weights, dtype=np.float32)
+
+        if indices.size == 0 and weights.size == 0:
+            return # nothing to do for empty array
         if len(indices.shape) != 2 or indices.shape[1] != 2:
             raise ValueError("indices array does not have correct dimensions")
         if len(weights.shape) != 1:
@@ -461,8 +479,6 @@ class Graph(object):
         if indices.shape[0] != weights.shape[0]:
             raise ValueError("indices/weights arrays have different length")
 
-        indices = np.asarray(indices, dtype=np.uint32)
-        weights = np.asarray(weights, dtype=np.float32)
         lib.graph_max_edges(self.obj, indices, weights, indices.shape[0])
 
     def edges(self, ret_indices=True, ret_weights=True):
@@ -607,31 +623,35 @@ class Graph(object):
         return components
 
     def modularity(self, labels):
+        labels = np.asarray(labels, dtype=np.uint32)
+
         if len(labels.shape) != 1 or labels.shape[0] != self.num_nodes:
             raise ValueError("labels array does not have correct dimensions")
 
-        labels = np.asarray(labels, dtype=np.uint32)
         return lib.modularity(self.obj, labels)
 
     def modularity_decode(self, indices):
+        indices = np.asarray(indices, dtype=np.uint32)
+
         if len(indices.shape) != 1 or indices.shape[0] != self.num_nodes:
             raise ValueError("indices array does not have correct dimensions")
 
-        indices = np.asarray(indices, dtype=np.uint32)
         return lib.modularity_decode(self.obj, indices)
 
     def antimodularity(self, labels):
+        labels = np.asarray(labels, dtype=np.uint32)
+
         if len(labels.shape) != 1 or labels.shape[0] != self.num_nodes:
             raise ValueError("labels array does not have correct dimensions")
 
-        labels = np.asarray(labels, dtype=np.uint32)
         return lib.antimodularity(self.obj, labels)
 
     def antimodularity_decode(self, indices):
+        indices = np.asarray(indices, dtype=np.uint32)
+
         if len(indices.shape) != 1 or indices.shape[0] != self.num_nodes:
             raise ValueError("indices array does not have correct dimensions")
 
-        indices = np.asarray(indices, dtype=np.uint32)
         return lib.antimodularity_decode(self.obj, indices)
 
     def newman(self, flags, num_clusters):
@@ -671,30 +691,33 @@ class Graph(object):
         return lib.graph_reciprocity(self.obj)
 
     def adj_rand_index_comp(self, indices_true, indices_pred):
+        indices_true = np.asarray(indices_true, dtype=np.uint32)
+        indices_pred = np.asarray(indices_pred, dtype=np.uint32)
+
         if len(indices_true.shape) != 1 or len(indices_pred.shape) != 1:
             raise ValueError("indices array does not have correct dimensions")
         if indices_true.shape[0] != indices_pred.shape[0]:
             raise ValueError("indices arrays have different length")
 
-        indices_true = np.asarray(indices_true, dtype=np.uint32)
-        indices_pred = np.asarray(indices_pred, dtype=np.uint32)
         return lib.adj_rand_index_comp(indices_true, indices_pred, self.obj)
 
 def decode_labels(indices):
+    indices = np.asarray(indices, dtype=np.uint32)
+
     if len(indices.shape) != 1:
         raise ValueError("indices array does not have correct dimensions")
 
-    indices = np.asarray(indices, dtype=np.uint32)
     labels_p = lib.decode_labels(indices, indices.shape[0])
     labels = npc.as_array(labels_p, shape=indices.shape).copy()
     lib.free_labels(labels_p)
     return labels
 
 def count_labels(labels):
+    labels = np.asarray(labels, dtype=np.uint32)
+
     if len(labels.shape) != 1:
         raise ValueError("labels array does not have correct dimensions")
 
-    labels = np.asarray(labels, dtype=np.uint32)
     count = lib.count_labels(labels, labels.shape[0])
     if count == 0xffffffff:
         raise MemoryError
@@ -702,10 +725,11 @@ def count_labels(labels):
     return count
 
 def simplify_labels(indices):
+    indices = np.asarray(indices.copy(), dtype=np.uint32)
+
     if len(indices.shape) != 1:
         raise ValueError("indices array does not have correct dimensions")
 
-    indices = np.asarray(indices.copy(), dtype=np.uint32)
     count = lib.simplify_labels_inplace(indices, indices.shape[0])
     if count == 0xffffffff:
         raise MemoryError
@@ -713,34 +737,37 @@ def simplify_labels(indices):
     return indices
 
 def split_labels(indices1, indices2):
+    indices1 = np.asarray(indices1.copy(), dtype=np.uint32)
+    indices2 = np.asarray(indices2, dtype=np.uint32)
+
     if len(indices1.shape) != 1 or len(indices2.shape) != 1:
         raise ValueError("indices array does not have correct dimensions")
     if indices1.shape[0] != indices2.shape[0]:
         raise ValueError("indices arrays have different length")
 
-    indices1 = np.asarray(indices1.copy(), dtype=np.uint32)
-    indices2 = np.asarray(indices2, dtype=np.uint32)
     lib.split_labels(indices1, indices2, indices1.shape[0])
     return indices1
 
 def intersection_matrix(indices1, indices2):
+    indices1 = np.asarray(indices1, dtype=np.uint32)
+    indices2 = np.asarray(indices2, dtype=np.uint32)
+
     if len(indices1.shape) != 1 or len(indices2.shape) != 1:
         raise ValueError("indices array does not have correct dimensions")
     if indices1.shape[0] != indices2.shape[0]:
         raise ValueError("indices arrays have different length")
 
-    indices1 = np.asarray(indices1, dtype=np.uint32)
-    indices2 = np.asarray(indices2, dtype=np.uint32)
     return Graph(obj=lib.intersection_matrix(indices1, indices2, indices1.shape[0]))
 
 def confusion_matrix(indices_true, indices_pred):
+    indices_true = np.asarray(indices_true, dtype=np.uint32)
+    indices_pred = np.asarray(indices_pred, dtype=np.uint32)
+
     if len(indices_true.shape) != 1 or len(indices_pred.shape) != 1:
         raise ValueError("indices array does not have correct dimensions")
     if indices_true.shape[0] != indices_pred.shape[0]:
         raise ValueError("indices arrays have different length")
 
-    indices_true = np.asarray(indices_true, dtype=np.uint32)
-    indices_pred = np.asarray(indices_pred, dtype=np.uint32)
     a, b, c, d = c_double(), c_double(), c_double(), c_double()
     if not lib.confusion_matrix(a, b, c, d, indices_true, indices_pred, indices_true.shape[0]):
         raise MemoryError
@@ -749,13 +776,14 @@ def confusion_matrix(indices_true, indices_pred):
 
 def __wrap_metric(fn):
     def wrap(indices_true, indices_pred):
+        indices_true = np.asarray(indices_true, dtype=np.uint32)
+        indices_pred = np.asarray(indices_pred, dtype=np.uint32)
+
         if len(indices_true.shape) != 1 or len(indices_pred.shape) != 1:
             raise ValueError("indices array does not have correct dimensions")
         if indices_true.shape[0] != indices_pred.shape[0]:
             raise ValueError("indices arrays have different length")
 
-        indices_true = np.asarray(indices_true, dtype=np.uint32)
-        indices_pred = np.asarray(indices_pred, dtype=np.uint32)
         return fn(indices_true, indices_pred, indices_true.shape[0])
     return wrap
 
@@ -1616,27 +1644,33 @@ if __name__ == '__main__':
             g = Graph(num_nodes=3, directed=True)
             test_indices = np.array([[0, 1], [1, 2], [2, 0], [3, 3]])
             test_weights = np.array([1.0, 2.0, 3.0, 4.0])
+            g.add_edges([], [])
             g.add_edges(test_indices, test_weights)
             indices, weights = g.edges()
             self.assertEqual(indices.tolist(), [[0, 1], [1, 2], [2, 0]])
             self.assertEqual(weights.tolist(), [1.0, 2.0, 3.0])
+            g.add_edges([], [])
             g.add_edges(test_indices, test_weights)
             indices, weights = g.edges()
             self.assertEqual(indices.tolist(), [[0, 1], [1, 2], [2, 0]])
             self.assertEqual(weights.tolist(), [2.0, 4.0, 6.0])
+            g.set_edges([], [])
             g.set_edges(test_indices, test_weights)
             indices, weights = g.edges()
             self.assertEqual(indices.tolist(), [[0, 1], [1, 2], [2, 0]])
             self.assertEqual(weights.tolist(), [1.0, 2.0, 3.0])
+            g.min_edges([], [])
             g.min_edges(test_indices, np.array([2.0, 2.0, 2.0, 2.0]))
             indices, weights = g.edges()
             self.assertEqual(indices.tolist(), [[0, 1], [1, 2], [2, 0]])
             self.assertEqual(weights.tolist(), [1.0, 2.0, 2.0])
             g.set_edges(test_indices, test_weights)
+            g.max_edges([], [])
             g.max_edges(test_indices, np.array([2.0, 2.0, 2.0, 2.0]))
             indices, weights = g.edges()
             self.assertEqual(indices.tolist(), [[0, 1], [1, 2], [2, 0]])
             self.assertEqual(weights.tolist(), [2.0, 2.0, 3.0])
+            g.del_edges([])
             g.del_edges(test_indices)
             self.assertEqual(g.edges()[0].tolist(), [])
             del g
