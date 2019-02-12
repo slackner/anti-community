@@ -22,7 +22,7 @@ struct graph *multiply_graph_const(const struct graph *g, double constant)
         link->weight *= constant;
     }
 
-    compress_graph_inline(dst);
+    compress_graph_inplace(dst);
     return dst;
 }
 
@@ -69,7 +69,7 @@ struct graph *multiply_graph_elementwise(const struct graph *g, const struct gra
         }
     }
 
-    compress_graph_inline(dst);
+    compress_graph_inplace(dst);
     return dst;
 }
 
@@ -97,7 +97,7 @@ struct graph *add_graph_elementwise(const struct graph *g, const struct graph *h
         }
     }
 
-    compress_graph_inline(dst);
+    compress_graph_inplace(dst);
     return dst;
 }
 
@@ -146,7 +146,7 @@ struct graph *multiply_graph(const struct graph *g, const struct graph *h)
         }
     }
 
-    compress_graph_inline(dst);
+    compress_graph_inplace(dst);
     return dst;
 }
 

@@ -92,7 +92,7 @@ struct graph *load_graph(const char *filename, uint32_t flags)
     fclose(fp);
     free(line);
 
-    compress_graph_inline(g);
+    compress_graph_inplace(g);
     return g;
 
 error:
@@ -150,7 +150,7 @@ struct graph *transpose_graph(const struct graph *g)
         _set_edge(dst, link->index, i, link->weight);
     }
 
-    compress_graph_inline(dst);
+    compress_graph_inplace(dst);
     return dst;
 }
 
@@ -180,7 +180,7 @@ struct graph *invert_graph(const struct graph *g, double max_weight, int self_lo
         }
     }
 
-    compress_graph_inline(dst);
+    compress_graph_inplace(dst);
     return dst;
 }
 
@@ -199,7 +199,7 @@ struct graph *filter_graph_labels(const struct graph *g, uint32_t *labels)
         _add_edge(dst, i, link->index, link->weight);
     }
 
-    compress_graph_inline(dst);
+    compress_graph_inplace(dst);
     return dst;
 }
 
@@ -219,7 +219,7 @@ struct graph *filter_graph_weights(const struct graph *g, float min, float max)
         _add_edge(dst, i, link->index, link->weight);
     }
 
-    compress_graph_inline(dst);
+    compress_graph_inplace(dst);
     return dst;
 }
 
@@ -240,7 +240,7 @@ struct graph *clamp_graph(const struct graph *g, float min, float max)
         _add_edge(dst, i, link->index, weight);
     }
 
-    compress_graph_inline(dst);
+    compress_graph_inplace(dst);
     return dst;
 }
 
@@ -356,7 +356,7 @@ void print_graph(FILE *file, const struct graph *g)
     fprintf(file, "\n");
 }
 
-void compress_graph_inline(struct graph *g)
+void compress_graph_inplace(struct graph *g)
 {
     struct adjacency *adj;
     struct link *link;

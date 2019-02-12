@@ -297,7 +297,7 @@ void assign_graph(struct graph *g, struct graph *src);
 /* print a graph adjacency list */
 void print_graph(FILE *file, const struct graph *g);
 /* try to shrink memory usage of a graph */
-void compress_graph_inline(struct graph *g);
+void compress_graph_inplace(struct graph *g);
 /* deallocate all memory used by a graph */
 void free_graph(struct graph *g);
 

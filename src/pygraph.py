@@ -87,7 +87,7 @@ lib.clamp_graph.restype = c_graph_p
 lib.resize_graph_inplace.argtypes = (c_graph_p, c_uint)
 lib.resize_graph_inplace.restype = c_graph_p
 
-lib.compress_graph_inline.argtypes = (c_graph_p,)
+lib.compress_graph_inplace.argtypes = (c_graph_p,)
 
 lib.free_graph.argtypes = (c_graph_p,)
 
@@ -389,7 +389,7 @@ class Graph(object):
         raise NotImplementedError()
 
     def compress(self):
-        lib.compress_graph_inline(self.obj)
+        lib.compress_graph_inplace(self.obj)
 
     def __getitem__(self, pos):
         start, end = pos

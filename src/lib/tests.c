@@ -404,7 +404,7 @@ static void test_compress_graph(void)
     assert(g->nodes[0].num_links < g->nodes[0].max_links);
     assert(g->nodes[0].ops == &adjacency_ops_unsorted);
 
-    compress_graph_inline(g);
+    compress_graph_inplace(g);
     assert(g->nodes[0].num_links == g->nodes[0].max_links);
     assert(g->nodes[0].ops == &adjacency_ops_sorted);
 
