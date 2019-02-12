@@ -8,7 +8,7 @@ metrics.txt: sbm.txt minmodularity.txt minmodularity-full.txt \
 	@echo "" > metrics.txt
 	for file in $^; do \
 	    echo "[$${file%.txt}]" >> metrics.txt; \
-	    ../../src/modularity --clusters="$$file" result.graph >> metrics.txt; \
+	    ../../src/metrics --clusters="$$file" result.graph >> metrics.txt; \
 	done
 
 sbm.txt: result.gml
