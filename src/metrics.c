@@ -43,6 +43,11 @@ METRIC_WRAP(jaccard);
 METRIC_WRAP(f1_measure);
 METRIC_WRAP(adj_rand_index);
 METRIC_WRAP(norm_mutual_info);
+METRIC_FUNC(adj_rand_index_comp)
+{
+    if (!labels_true) return NAN;
+    return adj_rand_index_comp(labels_true, labels_pred, g);
+}
 
 #undef METRIC_FUNC
 #undef METRIC_WRAP
@@ -69,7 +74,7 @@ static const struct metric_function metrics[] =
     { "jaccard",                metric_jaccard              },
     { "f1-measure",             metric_f1_measure           },
     { "adj-rand-index",         metric_adj_rand_index       },
-    { "adj-rand-index-comp",    adj_rand_index_comp         },
+    { "adj-rand-index-comp",    metric_adj_rand_index_comp  },
     { "norm-mutual-info",       metric_norm_mutual_info     },
 };
 
