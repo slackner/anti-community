@@ -1,7 +1,7 @@
 /*
  * Minimal graph library
  *
- * Copyright (c) 2017-2018 Sebastian Lackner
+ * Copyright (c) 2017-2019 Sebastian Lackner
  */
 
 #ifndef _INTERNAL_H_
@@ -45,15 +45,8 @@
 void random_bytes(uint8_t *buffer, size_t length) DECL_INTERNAL;
 float random_float(void) DECL_INTERNAL;
 
-static inline struct link *_get_link(struct adjacency *adj, uint32_t end, int allocate)
-{
-    return adj->ops->get(adj, end, allocate);
-}
-
-static inline void _del_link(struct adjacency *adj, struct link *link)
-{
-    adj->ops->del(adj, link);
-}
+struct link *_get_link(struct adjacency *adj, uint32_t end, int allocate) DECL_INTERNAL;
+void _del_link(struct adjacency *adj, struct link *link) DECL_INTERNAL;
 
 static inline void _set_edge(struct graph *g, uint32_t start, uint32_t end, float weight)
 {
@@ -120,9 +113,8 @@ static inline int _sort_index_by_label2(const void *a, const void *b, void *user
     return COMPARE(context->labels2[*ia], context->labels2[*ib]);
 }
 
-static inline void init_adjacency(struct adjacency *adj, const struct adjacency_ops *ops)
+static inline void init_adjacency(struct adjacency *adj)
 {
-    adj->ops       = ops;
     adj->links     = NULL;
     adj->num_links = 0;
     adj->max_links = 0;

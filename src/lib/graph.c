@@ -2,7 +2,7 @@
  * Minimal graph library
  * Generic functions.
  *
- * Copyright (c) 2017-2018 Sebastian Lackner
+ * Copyright (c) 2017-2019 Sebastian Lackner
  */
 
 #define _GNU_SOURCE
@@ -33,12 +33,8 @@ void *xrealloc(void *ptr, size_t new_size)
 
 struct graph *alloc_graph(uint32_t num_nodes, uint32_t flags)
 {
-    const struct adjacency_ops *ops = &adjacency_ops_sorted;
     struct graph *g;
     uint32_t i;
-
-    if (flags & GRAPH_FLAGS_UNSORTED)
-        ops = &adjacency_ops_unsorted;
 
     if (!(g = xmalloc(offsetof(struct graph, buffer[num_nodes]))))
         return NULL;
@@ -49,7 +45,7 @@ struct graph *alloc_graph(uint32_t num_nodes, uint32_t flags)
     g->nodes        = num_nodes ? g->buffer : NULL;
 
     for (i = 0; i < num_nodes; i++)
-        init_adjacency(&g->nodes[i], ops);
+        init_adjacency(&g->nodes[i]);
 
     return g;
 }
@@ -125,7 +121,6 @@ struct graph *duplicate_graph(const struct graph *g)
         }
 
         adj2 = &dst->nodes[i];
-        adj2->ops       = adj1->ops;
         adj2->links     = link;
         adj2->num_links = adj1->num_links;
         adj2->max_links = adj1->num_links;
@@ -142,7 +137,7 @@ struct graph *transpose_graph(const struct graph *g)
     struct link *link;
     uint32_t i;
 
-    if (!(dst = alloc_graph(g->num_nodes, g->flags & ~GRAPH_FLAGS_UNSORTED)))
+    if (!(dst = alloc_graph(g->num_nodes, g->flags)))
         return NULL;
 
     GRAPH_FOR_EACH_EDGE(g, i, link)
@@ -160,7 +155,7 @@ struct graph *invert_graph(const struct graph *g, double max_weight, int self_lo
     struct link *link;
     uint32_t i, j;
 
-    if (!(dst = alloc_graph(g->num_nodes, g->flags & ~GRAPH_FLAGS_UNSORTED)))
+    if (!(dst = alloc_graph(g->num_nodes, g->flags)))
         return NULL;
 
     for (i = 0; i < g->num_nodes; i++)
@@ -190,7 +185,7 @@ struct graph *filter_graph_labels(const struct graph *g, uint32_t *labels)
     struct link *link;
     uint32_t i;
 
-    if (!(dst = alloc_graph(g->num_nodes, g->flags & ~GRAPH_FLAGS_UNSORTED)))
+    if (!(dst = alloc_graph(g->num_nodes, g->flags)))
         return NULL;
 
     GRAPH_FOR_EACH_EDGE(g, i, link)
@@ -209,7 +204,7 @@ struct graph *filter_graph_weights(const struct graph *g, float min, float max)
     struct link *link;
     uint32_t i;
 
-    if (!(dst = alloc_graph(g->num_nodes, g->flags & ~GRAPH_FLAGS_UNSORTED)))
+    if (!(dst = alloc_graph(g->num_nodes, g->flags)))
         return NULL;
 
     GRAPH_FOR_EACH_EDGE(g, i, link)
@@ -229,7 +224,7 @@ struct graph *clamp_graph(const struct graph *g, float min, float max)
     struct link *link;
     uint32_t i;
 
-    if (!(dst = alloc_graph(g->num_nodes, g->flags & ~GRAPH_FLAGS_UNSORTED)))
+    if (!(dst = alloc_graph(g->num_nodes, g->flags)))
         return NULL;
 
     GRAPH_FOR_EACH_EDGE(g, i, link)
@@ -261,18 +256,14 @@ int clamp_graph_inplace(struct graph *g, float min, float max)
 
 int resize_graph_inplace(struct graph *g, uint32_t num_nodes)
 {
-    const struct adjacency_ops *ops = &adjacency_ops_sorted;
     struct adjacency *nodes;
     uint32_t i;
-
-    if (g->flags & GRAPH_FLAGS_UNSORTED)
-        ops = &adjacency_ops_unsorted;
 
     if (num_nodes < g->num_nodes)
     {
         for (i = 0; i < num_nodes; i++)
         {
-            struct adjacency *adj = sort_adjacency(&g->nodes[i]);
+            struct adjacency *adj = &g->nodes[i];
             while (adj->num_links > 0 && adj->links[adj->num_links - 1].index >= num_nodes)
                 adj->num_links--;
         }
@@ -311,7 +302,7 @@ int resize_graph_inplace(struct graph *g, uint32_t num_nodes)
         }
 
         for (i = g->num_nodes; i < num_nodes; i++)
-            init_adjacency(&nodes[i], ops);
+            init_adjacency(&nodes[i]);
 
         g->num_nodes = num_nodes;
         g->nodes = nodes;
@@ -336,7 +327,7 @@ void assign_graph(struct graph *g, struct graph *src)
 
         free_adjacency(adj1);
         *adj1 = *adj2;
-        init_adjacency(adj2, &adjacency_ops_unsorted);
+        init_adjacency(adj2);
     }
 
     free_graph(src);
@@ -364,7 +355,7 @@ void compress_graph_inplace(struct graph *g)
 
     for (i = 0; i < g->num_nodes; i++)
     {
-        adj = sort_adjacency(&g->nodes[i]);
+        adj = &g->nodes[i];
         if (adj->num_links >= adj->max_links) continue;
         if (adj->num_links)
         {
@@ -392,6 +383,70 @@ void free_graph(struct graph *g)
     if (g->nodes != g->buffer)
         free(g->nodes);
     free(g);
+}
+
+struct link *_get_link(struct adjacency *adj, uint32_t end, int allocate)
+{
+    struct link *link;
+    uint32_t insert = 0;
+
+    if (adj->num_links)
+    {
+        /* Note that we have to use signed numbers here. */
+        int32_t min = 0;
+        int32_t max = adj->num_links - 1;
+        int32_t i;
+
+        if (adj->hint < adj->num_links)
+        {
+            i = adj->hint;
+            link = &adj->links[i];
+            if (end < link->index) max = i - 1;
+            else if (end > link->index) min = i + 1;
+            else
+            {
+                adj->hint++;
+                return link;
+            }
+        }
+
+        while (min <= max)
+        {
+            i = (min + max) / 2;
+            link = &adj->links[i];
+            if (end < link->index) max = i - 1;
+            else if (end > link->index) min = i + 1;
+            else
+            {
+                adj->hint = i + 1;
+                return link;
+            }
+        }
+
+        insert = min;
+    }
+
+    if (!allocate) return NULL;
+    if (!adjacency_reserve(adj, 1)) return NULL;
+
+    link = &adj->links[insert];
+    memmove(&link[1], link, (char *)&adj->links[adj->num_links] - (char *)link);
+    adj->num_links++;
+
+    link->index = end;
+    link->weight = 0.0;
+    return link;
+}
+
+void _del_link(struct adjacency *adj, struct link *link)
+{
+    if (adj->hint < adj->num_links && link <= &adj->links[adj->hint])
+    {
+        if (link < &adj->links[adj->hint]) adj->hint--;
+        else adj->hint = ~0U;
+    }
+    memmove(link, &link[1], (char *)&adj->links[adj->num_links] - (char *)&link[1]);
+    adj->num_links--;
 }
 
 int graph_has_edge(const struct graph *g, uint32_t start, uint32_t end)
@@ -785,14 +840,4 @@ double *graph_weight_anomalies(const struct graph *g)
 
     free(weight);
     return result;
-}
-
-struct adjacency *sort_adjacency(struct adjacency *adj)
-{
-    if (adj->ops != &adjacency_ops_sorted)
-    {
-        adj->ops = &adjacency_ops_sorted;
-        adj->ops->init(adj);
-    }
-    return adj;
 }

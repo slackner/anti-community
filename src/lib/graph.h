@@ -1,7 +1,7 @@
 /*
  * Minimal graph library
  *
- * Copyright (c) 2017-2018 Sebastian Lackner
+ * Copyright (c) 2017-2019 Sebastian Lackner
  */
 
 #ifndef _GRAPH_H_
@@ -21,29 +21,15 @@ struct link
     float    weight;
 };
 
-struct adjacency;
-
-struct adjacency_ops
-{
-    void (*init)(struct adjacency *);
-    struct link *(*get)(struct adjacency *, uint32_t, int);
-    void (*del)(struct adjacency *, struct link *);
-};
-
 struct adjacency
 {
-    const struct adjacency_ops *ops;
     struct link *links;
     uint32_t    num_links;
     uint32_t    max_links;
     uint32_t    hint;
 };
 
-extern const struct adjacency_ops adjacency_ops_sorted;
-extern const struct adjacency_ops adjacency_ops_unsorted;
-
 #define GRAPH_FLAGS_DIRECTED 0x00000001 /* graph is directed */
-#define GRAPH_FLAGS_UNSORTED 0x00000004 /* don't try to keep adjacency lists sorted on insertion / deletion */
 
 struct graph
 {
@@ -77,9 +63,6 @@ struct _graph_iter2
     struct link *end_link2;
 };
 
-/* return a sorted adjacency list */
-struct adjacency *sort_adjacency(struct adjacency *adj);
-
 #define _UNIQUE_VARIABLE3(a, b) (a ## b)
 #define _UNIQUE_VARIABLE2(a, b) _UNIQUE_VARIABLE3(a, b)
 #define _UNIQUE_VARIABLE(a) _UNIQUE_VARIABLE2(a, __COUNTER__)
@@ -100,8 +83,8 @@ static inline struct _graph_iter2 __graph_for_each_link2(struct adjacency *adj1,
 {
     struct _graph_iter2 iter;
 
-    iter.end_link1 = __graph_for_each_link(sort_adjacency(adj1), &iter.link1);
-    iter.end_link2 = __graph_for_each_link(sort_adjacency(adj2), &iter.link2);
+    iter.end_link1 = __graph_for_each_link(adj1, &iter.link1);
+    iter.end_link2 = __graph_for_each_link(adj2, &iter.link2);
 
     return iter;
 }
@@ -151,11 +134,11 @@ static inline int __graph_next_link2(struct _graph_iter2 *iter, struct link **li
     }
 }
 
-static inline struct _graph_iter __graph_for_each_link_sorted(const struct graph *g, struct adjacency *adj, uint32_t *index)
+static inline struct _graph_iter __graph_for_each_link_any(const struct graph *g, struct adjacency *adj, uint32_t *index)
 {
     struct _graph_iter iter;
 
-    iter.end_link = __graph_for_each_link(sort_adjacency(adj), &iter.link);
+    iter.end_link = __graph_for_each_link(adj, &iter.link);
     iter.num_nodes = g->num_nodes;
     *index = 0;
 
@@ -216,17 +199,9 @@ static inline int __graph_next_link_any(struct _graph_iter *iter, uint32_t *inde
     for ((_i) = (_g)->num_nodes; (_i)--;) \
         GRAPH_FOR_EACH_LINK_REV(&(_g)->nodes[(_i)], (_link))
 
-#define GRAPH_FOR_EACH_EDGE_SORTED(_g, _i, _link) \
-    for ((_i) = 0; (_i) < (_g)->num_nodes; (_i)++) \
-        GRAPH_FOR_EACH_LINK(sort_adjacency(&(_g)->nodes[(_i)]), (_link))
-
-#define GRAPH_FOR_EACH_EDGE_REV_SORTED(_g, _i, _link) \
-    for ((_i) = (_g)->num_nodes; (_i)--;) \
-        GRAPH_FOR_EACH_LINK_REV(sort_adjacency(&(_g)->nodes[(_i)]), (_link))
-
 #define _GRAPH_FOR_EACH_EDGE_UNDIRECTED(_g, _i, _link, _end_link) \
     for ((_i) = 0; (_i) < (_g)->num_nodes; (_i)++) \
-        for (struct link *(_end_link) = __graph_for_each_link(sort_adjacency(&(_g)->nodes[(_i)]), &(_link)); \
+        for (struct link *(_end_link) = __graph_for_each_link(&(_g)->nodes[(_i)], &(_link)); \
              (_link) != (_end_link) && (_link)->index <= (_i); (_link)++)
 
 #define GRAPH_FOR_EACH_EDGE_UNDIRECTED(_g, _i, _link) \
@@ -240,14 +215,14 @@ static inline int __graph_next_link_any(struct _graph_iter *iter, uint32_t *inde
     _GRAPH_FOR_EACH_LINK2((_adj1), (_link1), (_adj2), (_link2), _UNIQUE_VARIABLE(__iter_))
 
 #define _GRAPH_FOR_EACH_NONEXISTENT_LINK(_g, _adj, _i, _iter) \
-    for (struct _graph_iter (_iter) = __graph_for_each_link_sorted((_g), (_adj), &(_i)); \
+    for (struct _graph_iter (_iter) = __graph_for_each_link_any((_g), (_adj), &(_i)); \
          __graph_next_nonexistent_link(&(_iter), &(_i)); (_i)++)
 
 #define GRAPH_FOR_EACH_NONEXISTENT_LINK(_g, _adj, _i) \
     _GRAPH_FOR_EACH_NONEXISTENT_LINK((_g), (_adj), (_i), _UNIQUE_VARIABLE(__iter_))
 
 #define _GRAPH_FOR_EACH_LINK_ANY(_g, _adj, _i, _link, _iter) \
-    for (struct _graph_iter (_iter) = __graph_for_each_link_sorted((_g), (_adj), &(_i)); \
+    for (struct _graph_iter (_iter) = __graph_for_each_link_any((_g), (_adj), &(_i)); \
          __graph_next_link_any(&(_iter), &(_i), &(_link)); (_i)++)
 
 #define GRAPH_FOR_EACH_LINK_ANY(_g, _adj, _i, _link) \

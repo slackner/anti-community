@@ -1,4 +1,10 @@
 #!/usr/bin/python2
+#
+# Python bindings for libgraph.so.
+#
+# Copyright (c) 2017-2019 Sebastian Lackner
+#
+
 from ctypes import cdll
 from ctypes import cast
 from ctypes import c_int
@@ -265,7 +271,6 @@ lib.graph_reciprocity.restype = c_double
 libc.free.argtypes = (c_void_p,)
 
 GRAPH_FLAGS_DIRECTED = 0x00000001
-GRAPH_FLAGS_UNSORTED = 0x00000004
 
 NEWMAN_FLAGS_MINIMIZE       = 0x00000001 # maximize result
 NEWMAN_FLAGS_FAST           = 0x00000002
@@ -275,11 +280,10 @@ NEWMAN_FLAGS_VERBOSE        = 0x00000008 # verbose output
 NEWMAN_FLAGS_STRICT         = 0x00000010 # enable assertions
 
 class Graph(object):
-    def __init__(self, num_nodes=None, directed=False, sorted=True, obj=None):
+    def __init__(self, num_nodes=None, directed=False, obj=None):
         if obj is None:
             flags = 0
             flags |= (GRAPH_FLAGS_DIRECTED if directed else 0)
-            flags |= (GRAPH_FLAGS_UNSORTED if not sorted else 0)
             obj = lib.alloc_graph(num_nodes, flags)
 
         self.obj = obj
@@ -312,10 +316,9 @@ class Graph(object):
         return (self.obj.contents.flags & GRAPH_FLAGS_DIRECTED) != 0
 
     @staticmethod
-    def load_graph(filename, directed=False, sorted=True):
+    def load_graph(filename, directed=False):
         flags = 0
         flags |= (GRAPH_FLAGS_DIRECTED if directed else 0)
-        flags |= (GRAPH_FLAGS_UNSORTED if not sorted else 0)
         obj = lib.load_graph(filename, flags)
         if not obj:
             raise IOError
@@ -872,16 +875,7 @@ if __name__ == '__main__':
     class PyGraphTests(unittest.TestCase):
         def test_get_link(self):
             expected = np.zeros(shape=(100,))
-            g = Graph(100, directed=True, sorted=True)
-            for i in random.sample(range(100), 100):
-                expected[i] = 1.0
-                g[0, i] = 1.0
-                for j in xrange(100):
-                    self.assertEqual(g[0, j], expected[j])
-            del g
-
-            expected = np.zeros(shape=(100,))
-            g = Graph(100, directed=True, sorted=False)
+            g = Graph(100, directed=True)
             for i in random.sample(range(100), 100):
                 expected[i] = 1.0
                 g[0, i] = 1.0
@@ -947,8 +941,8 @@ if __name__ == '__main__':
                 Graph(obj=0)
 
         def test_copy(self):
-            g = Graph(num_nodes=2, directed=True, sorted=False)
-            self.assertEqual(g.flags, 5)
+            g = Graph(num_nodes=2, directed=True)
+            self.assertEqual(g.flags, 1)
             self.assertEqual(g.directed, True)
             g[0, 1] = 1.0
             g = g.copy()

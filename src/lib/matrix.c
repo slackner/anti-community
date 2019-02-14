@@ -2,7 +2,7 @@
  * Minimal graph library
  * Matrix functions.
  *
- * Copyright (c) 2017-2018 Sebastian Lackner
+ * Copyright (c) 2017-2019 Sebastian Lackner
  */
 
 #include "graph.h"
@@ -57,7 +57,7 @@ struct graph *multiply_graph_elementwise(const struct graph *g, const struct gra
 
     assert(g->num_nodes == h->num_nodes);
 
-    if (!(dst = alloc_graph(g->num_nodes, (g->flags | h->flags) & ~GRAPH_FLAGS_UNSORTED)))
+    if (!(dst = alloc_graph(g->num_nodes, g->flags | h->flags)))
         return NULL;
 
     for (i = 0; i < g->num_nodes; i++)
@@ -81,7 +81,7 @@ struct graph *add_graph_elementwise(const struct graph *g, const struct graph *h
 
     assert(g->num_nodes == h->num_nodes);
 
-    if (!(dst = alloc_graph(g->num_nodes, (g->flags | h->flags) & ~GRAPH_FLAGS_UNSORTED)))
+    if (!(dst = alloc_graph(g->num_nodes, g->flags | h->flags)))
         return NULL;
 
     for (i = 0; i < g->num_nodes; i++)
@@ -130,7 +130,7 @@ struct graph *multiply_graph(const struct graph *g, const struct graph *h)
 
     assert(g->num_nodes == h->num_nodes);
 
-    if (!(dst = alloc_graph(g->num_nodes, (g->flags | h->flags) & ~GRAPH_FLAGS_UNSORTED)))
+    if (!(dst = alloc_graph(g->num_nodes, g->flags | h->flags)))
         return NULL;
 
     /* Both input graphs are undirected. This means the output graph will be

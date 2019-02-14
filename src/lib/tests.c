@@ -1,20 +1,11 @@
 /*
  * Minimal graph library
  *
- * Copyright (c) 2017-2018 Sebastian Lackner
+ * Copyright (c) 2017-2019 Sebastian Lackner
  */
 
 #include "graph.h"
 #include "internal.h"
-
-static void assert_check_graph(struct graph *g, uint32_t flags)
-{
-    uint32_t i;
-
-    assert(g->flags == flags);
-    for (i = 0; i < g->num_nodes; i++)
-        assert(g->nodes[i].ops == &adjacency_ops_sorted);
-}
 
 static void test_xmalloc(void)
 {
@@ -41,16 +32,6 @@ static void test_get_edge(void)
     graph_add_edge(g, 0, 4, 2.0);
     graph_add_edge(g, 0, 6, 3.0);
     graph_add_edge(g, 0, 8, 4.0);
-    assert(g->nodes[0].ops == &adjacency_ops_sorted);
-
-    for (i = 0; i < g->num_nodes; i++)
-    {
-        weight = graph_get_edge(g, 0, i);
-        if (i < 2 || i > 8 || (i & 1)) assert(weight == 0.0);
-        else assert(weight == i / 2.0);
-    }
-
-    g->nodes[0].ops = &adjacency_ops_unsorted;
 
     for (i = 0; i < g->num_nodes; i++)
     {
@@ -76,16 +57,16 @@ static void test_get_edge(void)
 
 static void test_for_each_edge_directed(void)
 {
-    struct adjacency empty = {NULL, (void *)0xdeadbeef, 0, 0, ~0U};
-    struct graph *g = alloc_graph(4, GRAPH_FLAGS_DIRECTED | GRAPH_FLAGS_UNSORTED);
+    struct adjacency empty = {(void *)0xdeadbeef, 0, 0, ~0U};
+    struct graph *g = alloc_graph(4, GRAPH_FLAGS_DIRECTED);
     struct link *link;
     double expected;
     uint32_t i;
 
-    graph_add_edge(g, 0, 3, 1.0);
-    graph_add_edge(g, 0, 2, 2.0);
-    graph_add_edge(g, 0, 1, 3.0);
-    graph_add_edge(g, 0, 0, 4.0);
+    graph_add_edge(g, 0, 3, 4.0);
+    graph_add_edge(g, 0, 2, 3.0);
+    graph_add_edge(g, 0, 1, 2.0);
+    graph_add_edge(g, 0, 0, 1.0);
     graph_add_edge(g, 1, 0, 5.0);
     graph_add_edge(g, 2, 0, 6.0);
 
@@ -150,24 +131,6 @@ static void test_for_each_edge_directed(void)
     }
     assert(expected == 4.0);
 
-    expected = 1.0;
-    GRAPH_FOR_EACH_EDGE_SORTED(g, i, link)
-    {
-        if (i == 0) assert(link->weight == 5.0 - expected);
-        else assert(link->weight == expected);
-        expected += 1.0;
-    }
-    assert(expected == 7.0);
-
-    expected = 6.0;
-    GRAPH_FOR_EACH_EDGE_REV_SORTED(g, i, link)
-    {
-        if (i == 0) assert(link->weight == 5.0 - expected);
-        else assert(link->weight == expected);
-        expected -= 1.0;
-    }
-    assert(expected == 0.0);
-
     free_graph(g);
 }
 
@@ -197,7 +160,7 @@ static void test_for_each_edge_undirected(void)
 
 static void test_for_each_edge2(void)
 {
-    struct adjacency empty = {NULL, (void *)0xdeadbeef, 0, 0, ~0U};
+    struct adjacency empty = {(void *)0xdeadbeef, 0, 0, ~0U};
     struct link *link1, *link2;
     struct graph *g = alloc_graph(4, GRAPH_FLAGS_DIRECTED);
     double expected;
@@ -277,7 +240,7 @@ static void test_for_each_edge2(void)
 
 static void test_for_each_nonexistent_edge(void)
 {
-    struct adjacency empty = {NULL, (void *)0xdeadbeef, 0, 0, ~0U};
+    struct adjacency empty = {(void *)0xdeadbeef, 0, 0, ~0U};
     struct graph *g = alloc_graph(4, GRAPH_FLAGS_DIRECTED);
     uint32_t i, expected;
 
@@ -315,7 +278,7 @@ static void test_for_each_nonexistent_edge(void)
 
 static void test_assign_graph(void)
 {
-    struct graph *g = alloc_graph(2, GRAPH_FLAGS_DIRECTED | GRAPH_FLAGS_UNSORTED);
+    struct graph *g = alloc_graph(2, GRAPH_FLAGS_DIRECTED);
     struct graph *h = alloc_graph(2, GRAPH_FLAGS_DIRECTED);
 
     g->userdata = (void *)0xcafebabe;
@@ -332,7 +295,7 @@ static void test_assign_graph(void)
 
     assign_graph(g, h);
 
-    assert_check_graph(g, GRAPH_FLAGS_DIRECTED);
+    assert(g->flags == GRAPH_FLAGS_DIRECTED);
     assert(g->userdata == (void *)0xcafebabe);
     assert(graph_get_edge(g, 0, 0) == 1.0);
     assert(graph_get_edge(g, 0, 1) == 2.0);
@@ -396,17 +359,15 @@ static void test_resize_graph(void)
 
 static void test_compress_graph(void)
 {
-    struct graph *g = alloc_graph(10, GRAPH_FLAGS_DIRECTED | GRAPH_FLAGS_UNSORTED);
+    struct graph *g = alloc_graph(10, GRAPH_FLAGS_DIRECTED);
 
     graph_add_edge(g, 0, 3, 1.0);
     graph_add_edge(g, 0, 2, 2.0);
     graph_add_edge(g, 0, 1, 3.0);
     assert(g->nodes[0].num_links < g->nodes[0].max_links);
-    assert(g->nodes[0].ops == &adjacency_ops_unsorted);
 
     compress_graph_inplace(g);
     assert(g->nodes[0].num_links == g->nodes[0].max_links);
-    assert(g->nodes[0].ops == &adjacency_ops_sorted);
 
     free_graph(g);
 }
@@ -525,7 +486,7 @@ static void test_duplicate_directed(void)
     graph_add_edge(g, 1, 0, 3.0);
 
     assign_graph(g, duplicate_graph(g));
-    assert_check_graph(g, flags);
+    assert(g->flags == flags);
 
     assert(graph_get_edge(g, 0, 0) == 1.0);
     assert(graph_get_edge(g, 0, 1) == 2.0);
@@ -540,7 +501,7 @@ static void test_duplicate_directed(void)
     graph_add_edge(g, 0, 2, 3.0);
 
     assign_graph(g, duplicate_graph(g));
-    assert_check_graph(g, flags);
+    assert(g->flags == flags);
 
     assert(graph_get_edge(g, 0, 0) == 1.0);
     assert(graph_get_edge(g, 0, 1) == 2.0);
@@ -560,7 +521,7 @@ static void test_duplicate_undirected(void)
     graph_add_edge(g, 0, 1, 2.0);
 
     assign_graph(g, duplicate_graph(g));
-    assert_check_graph(g, flags);
+    assert(g->flags == flags);
 
     assert(graph_get_edge(g, 0, 0) == 1.0);
     assert(graph_get_edge(g, 0, 1) == 2.0);
@@ -575,7 +536,7 @@ static void test_duplicate_undirected(void)
     graph_add_edge(g, 0, 2, 3.0);
 
     assign_graph(g, duplicate_graph(g));
-    assert_check_graph(g, flags);
+    assert(g->flags == flags);
 
     assert(graph_get_edge(g, 0, 0) == 1.0);
     assert(graph_get_edge(g, 0, 1) == 2.0);
@@ -596,7 +557,7 @@ static void test_transpose_directed(void)
     graph_add_edge(g, 1, 0, 3.0);
 
     assign_graph(g, transpose_graph(g));
-    assert_check_graph(g, flags);
+    assert(g->flags == flags);
 
     assert(graph_get_edge(g, 0, 0) == 1.0);
     assert(graph_get_edge(g, 0, 1) == 3.0);
@@ -615,7 +576,7 @@ static void test_transpose_undirected(void)
     graph_add_edge(g, 0, 1, 2.0);
 
     assign_graph(g, transpose_graph(g));
-    assert_check_graph(g, flags);
+    assert(g->flags == flags);
 
     assert(graph_get_edge(g, 0, 0) == 1.0);
     assert(graph_get_edge(g, 0, 1) == 2.0);
@@ -635,7 +596,7 @@ static void test_invert_directed(void)
     graph_add_edge(g, 1, 0, 3.0);
 
     assign_graph(g, invert_graph(g, 3.0, 1));
-    assert_check_graph(g, flags);
+    assert(g->flags == flags);
 
     assert(graph_get_edge(g, 0, 0) == 2.0);
     assert(graph_get_edge(g, 0, 1) == 1.0);
@@ -643,7 +604,7 @@ static void test_invert_directed(void)
     assert(graph_get_edge(g, 1, 1) == 3.0);
 
     assign_graph(g, invert_graph(g, 2.0, 1));
-    assert_check_graph(g, flags);
+    assert(g->flags == flags);
 
     assert(!graph_has_edge(g, 0, 0));
     assert(graph_get_edge(g, 0, 1) == 1.0);
@@ -662,7 +623,7 @@ static void test_invert_undirected(void)
     graph_add_edge(g, 0, 1, 2.0);
 
     assign_graph(g, invert_graph(g, 2.0, 1));
-    assert_check_graph(g, flags);
+    assert(g->flags == flags);
 
     assert(graph_get_edge(g, 0, 0) == 1.0);
     assert(!graph_has_edge(g, 0, 1));
@@ -670,7 +631,7 @@ static void test_invert_undirected(void)
     assert(graph_get_edge(g, 1, 1) == 2.0);
 
     assign_graph(g, invert_graph(g, 1.0, 1));
-    assert_check_graph(g, flags);
+    assert(g->flags == flags);
 
     assert(!graph_has_edge(g, 0, 0));
     assert(graph_get_edge(g, 0, 1) == 1.0);
@@ -690,7 +651,7 @@ static void test_multiply_const_directed(void)
     graph_add_edge(g, 1, 0, 3.0);
 
     assign_graph(g, multiply_graph_const(g, 2.0));
-    assert_check_graph(g, flags);
+    assert(g->flags == flags);
 
     assert(graph_get_edge(g, 0, 0) == 2.0);
     assert(graph_get_edge(g, 0, 1) == 4.0);
@@ -709,7 +670,7 @@ static void test_multiply_const_undirected(void)
     graph_add_edge(g, 0, 1, 2.0);
 
     assign_graph(g, multiply_graph_const(g, 2.0));
-    assert_check_graph(g, flags);
+    assert(g->flags == flags);
 
     assert(graph_get_edge(g, 0, 0) == 2.0);
     assert(graph_get_edge(g, 0, 1) == 4.0);
@@ -729,7 +690,7 @@ static void test_multiply_elementwise_directed(void)
     graph_add_edge(g, 1, 0, 3.0);
 
     assign_graph(g, multiply_graph_elementwise(g, g));
-    assert_check_graph(g, flags);
+    assert(g->flags == flags);
 
     assert(graph_get_edge(g, 0, 0) == 1.0);
     assert(graph_get_edge(g, 0, 1) == 4.0);
@@ -748,7 +709,7 @@ static void test_multiply_elementwise_undirected(void)
     graph_add_edge(g, 0, 1, 2.0);
 
     assign_graph(g, multiply_graph_elementwise(g, g));
-    assert_check_graph(g, flags);
+    assert(g->flags == flags);
 
     assert(graph_get_edge(g, 0, 0) == 1.0);
     assert(graph_get_edge(g, 0, 1) == 4.0);
@@ -768,7 +729,7 @@ static void test_square_directed(void)
     graph_add_edge(g, 1, 0, 3.0);
 
     assign_graph(g, square_graph(g));
-    assert_check_graph(g, flags);
+    assert(g->flags == flags);
 
     assert(graph_get_edge(g, 0, 0) == 7.0);
     assert(graph_get_edge(g, 0, 1) == 2.0);
@@ -787,7 +748,7 @@ static void test_square_undirected(void)
     graph_add_edge(g, 0, 1, 2.0);
 
     assign_graph(g, square_graph(g));
-    assert_check_graph(g, flags);
+    assert(g->flags == flags);
 
     assert(graph_get_edge(g, 0, 0) == 5.0);
     assert(graph_get_edge(g, 0, 1) == 2.0);
