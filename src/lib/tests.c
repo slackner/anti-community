@@ -1260,6 +1260,36 @@ static void test_merge_nodes_custom3(void)  /* median */
     free_graph(g);
 }
 
+static void test_merge_nodes_bug(void)
+{
+    struct graph *g = alloc_graph(4, 0);
+    uint32_t i, j, c = 0;
+
+    for (i = 0; i < 4; i++)
+        for (j = 0; j <= i; j++)
+            graph_add_edge(g, i, j, (float)(c++) / 10.0);
+
+    graph_merge_nodes_custom(g, 0, 2, 0.5, 0.5, 0.0, -0.5);
+
+    for (i = 0; i < 4; i++)
+    {
+        assert(!graph_has_edge(g, i, 2));
+        assert(!graph_has_edge(g, 2, i));
+    }
+
+    assert(!graph_has_edge(g, 0, 0));
+    assert(fabs(graph_get_edge(g, 0, 1) - 0.1) < 1e-7);
+    assert(fabs(graph_get_edge(g, 0, 3) - 0.6) < 1e-7);
+    assert(fabs(graph_get_edge(g, 1, 0) - 0.1) < 1e-7);
+    assert(fabs(graph_get_edge(g, 1, 1) - 0.2) < 1e-7);
+    assert(fabs(graph_get_edge(g, 1, 3) - 0.7) < 1e-7);
+    assert(fabs(graph_get_edge(g, 3, 0) - 0.6) < 1e-7);
+    assert(fabs(graph_get_edge(g, 3, 1) - 0.7) < 1e-7);
+    assert(fabs(graph_get_edge(g, 3, 3) - 0.9) < 1e-7);
+
+    free_graph(g);
+}
+
 static void test_antimodularity(void)
 {
     struct graph *g = alloc_graph(2, 0);
@@ -1581,6 +1611,7 @@ int main(void)
     test_merge_nodes_custom1();
     test_merge_nodes_custom2();
     test_merge_nodes_custom3();
+    test_merge_nodes_bug();
     test_antimodularity();
     /* test_sort_adjacency(); */
     test_decode_labels();

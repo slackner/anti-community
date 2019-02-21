@@ -191,7 +191,7 @@ void graph_merge_nodes_custom(struct graph *g, uint32_t index0, uint32_t index1,
         if (link1->index != index0 && (link0 = _get_link(&g->nodes[index0], link1->index, 1)))
         {
             weight = alpha1 * link0->weight + alpha2 * link1->weight +
-                     constant + gamma * abs(link0->weight - link1->weight);
+                     constant + gamma * fabs(link0->weight - link1->weight);
 
             link0->weight = weight;
             _set_edge(g, link1->index, index0, weight);
